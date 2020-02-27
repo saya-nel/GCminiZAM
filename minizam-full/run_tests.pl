@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use autodie qw(system);
+# use autodie qw(system); #ligne qu'on a commenté
 use feature 'say';
 
 
