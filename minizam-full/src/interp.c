@@ -99,18 +99,13 @@ mlvalue caml_interprete(code_t* prog) {
 
     case APPLY: {
       uint64_t n = prog[pc++];
-      mlvalue* tmp = malloc(n * sizeof(mlvalue)); // TODO: remove malloc
-      for (uint64_t i = 0; i < n; i++) {
-        tmp[i] = POP_STACK();
+      sp += 3;
+      for (uint64_t i = sp-n; i < sp; i++) {
+        stack[i] = stack[i-3];
       }
-      PUSH_STACK(env);
-      PUSH_STACK(Val_long(pc));
-      PUSH_STACK(Val_long(extra_args));
-      /* push in reverse order to keep the initial order */
-      for (int i = n-1; i >= 0; i--) {
-        PUSH_STACK(tmp[i]);
-      }
-      free(tmp);
+      stack[sp-n-3] = env;
+      stack[sp-n-2] = Val_long(pc);
+      stack[sp-n-1] = Val_long(extra_args);
       pc = Addr_closure(accu);
       env = Env_closure(accu);
       extra_args = n-1;
@@ -120,18 +115,10 @@ mlvalue caml_interprete(code_t* prog) {
     case APPTERM: {
       uint64_t n = prog[pc++];
       uint64_t m = prog[pc++];
-      mlvalue* tmp = malloc(n * sizeof(mlvalue)); // TODO: remove malloc
       for (uint64_t i = 0; i < n; i++) {
-        tmp[i] = POP_STACK();
+        stack[sp-m+i] = stack[sp-n+i];
       }
-      for (uint64_t i = 0; i < m-n; i++) {
-        POP_STACK();
-      }
-      /* push in reverse order to keep the initial order */
-      for (int i = n-1; i >= 0; i--) {
-        PUSH_STACK(tmp[i]);
-      }
-      free(tmp);
+      sp -= (m-n);
       pc = Addr_closure(accu);
       env = Env_closure(accu);
       extra_args += n-1;
