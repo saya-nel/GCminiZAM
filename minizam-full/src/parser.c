@@ -279,10 +279,7 @@ code_t *parse(char *filename)
     code_size++;
   }
 
-  if (close(f) == -1)
-  {
-    exit(EXIT_FAILURE);
-  }
+  fclose(f);
 
   return assemble(code, labels, instr_count, code_size);
 }
