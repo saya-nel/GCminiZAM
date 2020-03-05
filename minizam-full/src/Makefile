@@ -1,6 +1,6 @@
 CC = clang
 CFLAGS = -Wall -Wextra -g
-OBJS = alloc.o interp.o minizam.o mlvalues.o parser.o primitives.o domain.o
+OBJS = stop_and_copy.o mark_and_sweep.o alloc.o interp.o minizam.o mlvalues.o parser.o primitives.o domain.o
 
 all: minizam
 
