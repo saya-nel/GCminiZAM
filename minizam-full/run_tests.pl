@@ -54,6 +54,8 @@ my %tests = (
     'unary_funs/fun3'             => 'A0',
     'unary_funs/fun4'             => '42',
     'unary_funs/fun5'             => '41',
+
+    'perso/sum_3' => '333',
     );
 
 # Recompiling the vm
