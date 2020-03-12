@@ -1,5 +1,5 @@
+#include <stdlib.h>
 
-
-/* heap_t heap; */
+#include "mlvalues.h"
 
 mlvalue *stop_and_copy_alloc(size_t n);

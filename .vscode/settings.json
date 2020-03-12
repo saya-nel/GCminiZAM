@@ -1,5 +1,6 @@
 {
   "files.associations": {
-    "stop_and_copy.h": "c"
+    "stop_and_copy.h": "c",
+    "stdio.h": "c"
   }
 }

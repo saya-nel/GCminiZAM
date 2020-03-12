@@ -7,6 +7,10 @@ typedef struct _caml_domain_state
 {
   /* Stack */
   mlvalue *stack;
+  // éléments utilisés pour stop_and_copy
+  mlvalue *from_space;
+  mlvalue *to_space;
+  mlvalue *heap_pointer; // premiere position allouable
 } caml_domain_state;
 
 /* The global state */

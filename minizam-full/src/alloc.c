@@ -1,9 +1,8 @@
-#define STOP_AND_COPY
-
 #include <stdlib.h>
 
 #include "alloc.h"
 #include "mlvalues.h"
+#include "config.h"
 
 // On inclu un des deux GC
 

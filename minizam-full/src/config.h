@@ -1,6 +1,8 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
+#define STOP_AND_COPY // GC à utilisé
+
 #define KB 1024
 #define MB (1024 * KB)
 #define GB (1024 * MB)
@@ -11,5 +13,8 @@
    the heap; probably causing something to go wrong somewhere. */
 /* TODO: auto-growing stack, or throw stack overflow when needed. */
 #define Stack_size (8 * MB)
+
+// config stop and copy
+#define SEMI_SPACE_SIZE (32 * KB)
 
 #endif

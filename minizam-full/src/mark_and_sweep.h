@@ -1,5 +1,5 @@
+#include <stdlib.h>
 
+#include "mlvalues.h"
 
-/* heap_t heap; */
-
-mlvalue* mark_and_sweep_alloc(size_t n);
+mlvalue *mark_and_sweep_alloc(size_t n);
