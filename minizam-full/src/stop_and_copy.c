@@ -12,10 +12,11 @@ typedef struct {
 
 heap_t heap;
 */
-#include<stdio.h>
-mlvalue * stop_and_copy(size_t n){
-	printf("---> alloc stop and copu\n");
-	return malloc(8 * n);
+#include <stdio.h>
+mlvalue *stop_and_copy_alloc(size_t n)
+{
+  printf("Stop and copy alloc\n");
+  return malloc(8 * n);
   /*mlvalue* semiSpace;
   switch (Caml_state.heap.status){
     case FROM_SPACE: semiSpace = Caml_state.heap.semiSpace0; break;

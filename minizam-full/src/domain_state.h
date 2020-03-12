@@ -3,15 +3,14 @@
 
 #include "mlvalues.h"
 
-
-typedef struct _caml_domain_state {
+typedef struct _caml_domain_state
+{
   /* Stack */
-  mlvalue* stack;
-
+  mlvalue *stack;
 } caml_domain_state;
 
 /* The global state */
-extern caml_domain_state* Caml_state;
+extern caml_domain_state *Caml_state;
 
 /* Initialisation function for |Caml_state| */
 void caml_init_domain();

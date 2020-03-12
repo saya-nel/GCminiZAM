@@ -2,4 +2,4 @@
 
 /* heap_t heap; */
 
-mlvalue * stop_and_copy(size_t n);
+mlvalue *stop_and_copy_alloc(size_t n);
