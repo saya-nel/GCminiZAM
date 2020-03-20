@@ -2,6 +2,7 @@
 #define _MLVALUES_H
 
 #include <stdint.h>
+#include <stdlib.h> // pour size_t
 
 typedef int64_t mlvalue;
 typedef uint64_t header_t;

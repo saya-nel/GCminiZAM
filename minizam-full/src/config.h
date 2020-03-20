@@ -1,7 +1,8 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
-#define STOP_AND_COPY // GC à utilisé
+// #define MARK_AND_SWEEP
+#define STOP_AND_COPY // GC à utiliser
 
 #define KB 1024
 #define MB (1024 * KB)

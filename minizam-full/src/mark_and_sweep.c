@@ -1,62 +1,114 @@
 #include "mark_and_sweep.h"
-#include "mlvalues.h"
 #include <assert.h>
 #include <stdio.h>
 
-fl_t cell_alloc(mlvalue * v){
-	fl_t p = malloc(sizeof(fl_t));
-	Bk(p) = v;
-	Next(p) = 0;
-	return p;
+#include "domain_state.h"
+#include "config.h"
+
+#include "interp.h"
+
+#include "freelist.h"
+
+
+#define Debug(x) //(x)
+
+// listes d'objets alloués (pour amorcer les freelist)
+struct cell {
+  mlvalue * content;
+  struct cell * next;    
+};
+typedef struct cell * list;
+
+#define Empty (0)
+
+void cons (mlvalue * x, list * l){
+  list c = malloc(sizeof (list));
+  assert (c);
+  c->content = x;
+  c->next = *l;
+  *l = c;
 }
 
-// maintenir une free list par adresse croissante, pour faciliter 
-// la fusion des blocs. [cf. runtime de Caml-light]
-void insert_fl(mlvalue * b, fl_t * fl){
-	fl_t cur, p;
-	p = cell_alloc(b);
-	
-	if (!fl) { 
-		fl = malloc(sizeof(fl_t));
-		*fl = p; 
-	} else {
-		cur = *fl;
-		if (b < Bk(cur)){
-			Next(p) = cur;
-			*fl = p;
-		} else {
-			while (Next(cur) && (b > Bk(Next(cur)))){
-				cur = Next(cur);
-			}
-			Next(p) = Next(cur);
-			Next(cur) = p;
-		}
-	}
-
+int length (list l){
+  int n = 0;
+  while (l != Empty){
+    ++n;
+    l = l->next; 
+  }
+  return n;
 }
 
-void print_fl (fl_t fl){
-	while (fl){
-		print_val(Bk(fl)[0]);
-		printf ("(addr: %lld)|",Bk(fl)[0]);
-		fl = Next(fl);
-	}
-	printf ("\n");
+//liste de gros objets alloués
+static list big_objects = Empty;
+
+// freelist de gros objets
+static mlvalue fl_big_objects = NilFL;
+
+// allouer un gros objet
+mlvalue * alloc_big_object(size_t sz){
+  mlvalue b,*p = NilFL;
+  b = first_fit(sz,&fl_big_objects); 
+  if (b == NilFL){
+    p = malloc(8*sz);
+    cons (p,&big_objects);
+    return p;
+  }
+  return Ptr_val(b);
 }
 
-static mlvalue *alloc_in_fl(size_t sz, fl_t * pfl){
-	mlvalue * v = malloc(8*sz);
-	insert_fl(v,pfl);
-	return v;
+static void mark_aux(mlvalue racine){
+  size_t i;
+  if (Is_block(racine)){   
+    if (Color(racine) == WHITE){ // si pas vu
+      Hd_val(racine) = Make_header(Size(racine),GRAY,Tag(racine)); // color[racine] <- vu
+      for (i = 0; i < Size(racine);i++){
+	mark_aux (Field(racine,i));          
+      }
+    }
+  }
+}
+void mark(){ 
+  // racines dans la pile
+  // TODO : racine dans les registres
+  size_t i;
+  for (i = 0; i < sp; i++){
+    mark_aux(Caml_state->stack[i]);
+  }
 }
 
-
-static fl_t * fl_big = NULL; 
-static fl_t * fl_others = NULL; 
+// pour gros objets
+void sweep(list * lst){
+  list cur = *lst;
+  mlvalue * b;
+  if (cur != Empty){
+    for ( ;cur->next != Empty ; cur = cur->next){
+      b = cur->next->content;
+      //printf("sz = %lld, color = %d, tag = %d\n",Size(Val_ptr(b+1)),Color(Val_ptr(b+1)),Tag(Val_ptr(b+1)));
+      if (Color(Val_ptr(b+1)) == GRAY){  
+	cons_fl(b,&fl_big_objects); // ajoute b à la freelist 
+	cur->next = cur->next->next; // retire b de la liste de gros objets alloués
+	assert(cur);
+      }
+    }
+  }
+}
 
 mlvalue *mark_and_sweep_alloc(size_t sz){
-  if (sz > 0x8000){
-    return alloc_in_fl(sz,fl_big);
-  } 
-  return alloc_in_fl(sz,fl_others);
+  static size_t sz_last_gcX3 = 0; // 3 fois la quantité de mémoire utilisé lors du dernier gc
+  static size_t cur_sz = 0;
+
+  if (2 * cur_sz > sz_last_gcX3){  // si augmentation de 50 %
+    /* effectivement la stratégie demdandée augmente 
+       les performances en pratique */
+    sz_last_gcX3 = cur_sz * 3;
+        
+    Debug( printf ("debut : %d objets alloués\n",length(big_objects)) );
+        
+    //mark();
+    sweep(&big_objects);
+
+    Debug( printf ("fin : %d objets alloués\n",length(big_objects)) );
+  }
+  cur_sz+=sz;
+  return alloc_big_object(sz); //malloc(sz*8);
 }
