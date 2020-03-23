@@ -12,7 +12,6 @@ typedef struct _caml_domain_state
   mlvalue *from_space;
   mlvalue *to_space;
   mlvalue *heap_pointer; // premiere position allouable
-
   // éléments utilisés pour le mark_and_sweep
 
 } caml_domain_state;
