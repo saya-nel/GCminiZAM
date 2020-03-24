@@ -22,6 +22,7 @@ void run_gc()
   // pour parcourir la pile
   mlvalue *curr = Caml_state->stack;    // premier element de la pile
   mlvalue *next = Caml_state->to_space; // premiere pos qu'on peut allouer dans to_space
+  clear_heap(next);
 
   while (curr < &Caml_state->stack[sp]) // on parcours toute la pile
   {
@@ -36,15 +37,15 @@ void run_gc()
       else
       {
         // on créer une copie dans to_space du bloc courant dans from_space (header compris)
-        memcpy(next, &(Ptr_val(*curr)[-1]), (Size(*curr) + 1) * sizeof(mlvalue));
-        mlvalue *old = next;     // sauvegarde de l'endroit ou on a copier dans to_space
+        mlvalue *old = next; // sauvegarde de l'endroit ou on a copier dans to_space
+        memcpy(next, &(Hd_val(*curr)), (Size(*curr) + 1) * sizeof(mlvalue));
         next += Size(*curr) + 1; // prochaine position disponible dans to_space
         // on change son tag dans from_space en FWD_PTR_T
         Hd_val(*curr) = Make_header(Size(*curr), WHITE, FWD_PTR_T);
         // ajoute le forward pointer dans from_space vers la nouvelle position dans to_space
-        Field0(*curr) = Val_ptr(old);
+        Field0(*curr) = Val_ptr(old + 1); // on pointe sur le premier bloc
         // on pointe (la pile) vers le nouvel objet dans to_space
-        *curr = Val_ptr(old);
+        *curr = Val_ptr(old + 1); // on pointe sur le premier bloc
       }
     }
     curr++; // on va sur l'élément suivant dans la pile
@@ -55,11 +56,12 @@ void run_gc()
   while (curr < next)              // on parcours tout to_space
   {
     mlvalue *last_of_block = curr + Size(Val_ptr(curr)); // pos du header apres le bloc courant
-    while (curr < last_of_block)                         // tans qu'on est sur le bloc actuel
+
+    while (curr < last_of_block) // tans qu'on est sur le bloc actuel
     {
       if (Is_block(*curr)) // si c'est un pointeur
       {
-        printf("isblock\n");
+        printf("isblock : %ld\n", *curr);
         // on regarde si le tag de la valeure pointée est FWD_PTR_T
         if (Tag(*curr) == FWD_PTR_T)
         {
@@ -71,16 +73,16 @@ void run_gc()
         {
           printf("is not fwd\n");
           // on deplace l'objet dans to_space
-          printf("tag : %ld\n", Tag(*curr));
-          memcpy(next, &(Ptr_val(*curr)[-1]), (Size(*curr) + 1) * sizeof(mlvalue));
+          printf("tag : %ld, size : %ld\n", Tag(*curr), Size(*curr));
+          memcpy(next, &(Hd_val(*curr)), (Size(*curr) + 1) * sizeof(mlvalue));
           mlvalue *old = next;     // sauvegarde de l'endroit ou on a copier dans to_space
           next += Size(*curr) + 1; // prochaine position disponible dans to_space
           // on change son tag dans from_space en FWD_PTR_T
           Hd_val(*curr) = Make_header(Size(*curr), WHITE, FWD_PTR_T);
           // ajoute le forward pointer dans from_space vers la nouvelle position dans to_space
-          Field0(*curr) = Val_ptr(old);
+          Field0(*curr) = Val_ptr(old + 1);
           // on pointe to_space vers le nouvel objet dans to_space
-          *curr = Val_ptr(old);
+          *curr = Val_ptr(old + 1);
         }
       }
       curr++;
