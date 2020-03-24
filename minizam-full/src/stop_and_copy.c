@@ -17,22 +17,10 @@ int heap_can_alloc(size_t n)
   return (Caml_state->heap_pointer + n) <= (Caml_state->from_space + (SEMI_SPACE_SIZE / sizeof(mlvalue)));
 }
 
-void search_alive_values_on_stack()
+void run_gc()
 {
-
-  // mlvalue *curr = Caml_state->from_space + 1; // +1 pour skipper le premier header
-  // while (curr < Caml_state->heap_pointer)
-  // {
-  //   // print_val(Val_ptr(curr));
-  //   // printf("\n");
-  //   printf("tag : %lu, size : %lu | ", Tag(Val_ptr(curr)), Size(Val_ptr(curr)));
-  //   curr += Size(Val_ptr(curr)) + 1; // +1 pour skipper le header du bloc suivant
-  // }
-  // printf("\n");
-
   // pour parcourir la pile
-  mlvalue *curr = Caml_state->stack; // premier element de la pile
-
+  mlvalue *curr = Caml_state->stack;    // premier element de la pile
   mlvalue *next = Caml_state->to_space; // premiere pos qu'on peut allouer dans to_space
 
   while (curr < &Caml_state->stack[sp]) // on parcours toute la pile
@@ -42,12 +30,12 @@ void search_alive_values_on_stack()
       // on regarde si le tag est FWD_PTR_T
       if (Tag(*curr) == FWD_PTR_T)
       {
-        // on pointe vers la valeur du forwarding pointer
+        // on pointe la pile vers la valeur du forwarding pointer
         *curr = Field0(*curr);
       }
       else
       {
-        // on créer une copie dans to_space du bloc courant dans to space (header compris)
+        // on créer une copie dans to_space du bloc courant dans from_space (header compris)
         memcpy(next, &(Ptr_val(*curr)[-1]), (Size(*curr) + 1) * sizeof(mlvalue));
         mlvalue *old = next;     // sauvegarde de l'endroit ou on a copier dans to_space
         next += Size(*curr) + 1; // prochaine position disponible dans to_space
@@ -57,16 +45,55 @@ void search_alive_values_on_stack()
         Field0(*curr) = Val_ptr(old);
         // on pointe (la pile) vers le nouvel objet dans to_space
         *curr = Val_ptr(old);
-        // printf("old : %d, val_ptr(hold) %lu\n", old, Val_ptr(old));
       }
     }
-    curr += 1; // on va sur l'élément suivant dans la pile
+    curr++; // on va sur l'élément suivant dans la pile
   }
+
+  // on parcours maintenant to_space jusqu'à next, et fait pareil
+  curr = Caml_state->to_space + 1; // on ce place apres le premier header de to_space
+  while (curr < next)              // on parcours tout to_space
+  {
+    mlvalue *last_of_block = curr + Size(Val_ptr(curr)); // pos du header apres le bloc courant
+    while (curr < last_of_block)                         // tans qu'on est sur le bloc actuel
+    {
+      if (Is_block(*curr)) // si c'est un pointeur
+      {
+        printf("isblock\n");
+        // on regarde si le tag de la valeure pointée est FWD_PTR_T
+        if (Tag(*curr) == FWD_PTR_T)
+        {
+          printf("is fwd\n");
+          // on pointe curr vers la valeur du forwarding pointer
+          *curr = Field0(*curr);
+        }
+        else
+        {
+          printf("is not fwd\n");
+          // on deplace l'objet dans to_space
+          printf("tag : %ld\n", Tag(*curr));
+          memcpy(next, &(Ptr_val(*curr)[-1]), (Size(*curr) + 1) * sizeof(mlvalue));
+          mlvalue *old = next;     // sauvegarde de l'endroit ou on a copier dans to_space
+          next += Size(*curr) + 1; // prochaine position disponible dans to_space
+          // on change son tag dans from_space en FWD_PTR_T
+          Hd_val(*curr) = Make_header(Size(*curr), WHITE, FWD_PTR_T);
+          // ajoute le forward pointer dans from_space vers la nouvelle position dans to_space
+          Field0(*curr) = Val_ptr(old);
+          // on pointe to_space vers le nouvel objet dans to_space
+          *curr = Val_ptr(old);
+        }
+      }
+      curr++;
+    }
+    curr = last_of_block + 1; // on saute le header d'après
+  }
+
   // on a finit, on echange from_space et to_space
   mlvalue *tmp = Caml_state->from_space;
   Caml_state->from_space = Caml_state->to_space;
   Caml_state->to_space = tmp;
   Caml_state->heap_pointer = next;
+  clear_heap(Caml_state->to_space);
 }
 
 mlvalue *stop_and_copy_alloc(size_t n)
@@ -81,7 +108,7 @@ mlvalue *stop_and_copy_alloc(size_t n)
   else
   {
     printf("Plus de place dans from_space, lancement GC.\n");
-    search_alive_values_on_stack();
+    run_gc();
     return stop_and_copy_alloc(n * sizeof(mlvalue));
   }
 }
