@@ -16,20 +16,22 @@ void clear_heap(mlvalue *too_clear)
 */
 int heap_can_alloc(size_t n)
 {
-  return (Caml_state->heap_pointer + n) <= (Caml_state->from_space + (SEMI_SPACE_SIZE / sizeof(mlvalue)));
+  return (Caml_state->heap_pointer + n) < (Caml_state->from_space + (SEMI_SPACE_SIZE / sizeof(mlvalue)));
 }
 
-void move_addr(mlvalue *val)
+void move_addr(mlvalue *val, char *zone)
 {
   if (Is_block(*val)) // val pointe vers un block
   {
+    printf("%s : tag : %ld, size %ld\n", zone, Tag(*val), Size(*val));
     if (Tag(*val) == FWD_PTR_T) // si le block est un fwd ptr
     {
       *val = Field0(*val); // on fais pointer val vers le fwd ptr
     }
     else
     {
-      printf("tag : %ld, size : %ld\n", Tag(*val), Size(*val));
+      // if (Tag(*val) > 3)
+      // printf("tag : %ld, size : %ld\n", Tag(*val), Size(*val));
       // on copie tout le bloc (header comprit) dans to_space
       mlvalue *old = next; // sauvegarde de l'endroit ou on va copier dans to_space
       memcpy(next, &(Hd_val(*val)), (Size(*val) + 1) * sizeof(mlvalue));
@@ -52,26 +54,26 @@ void run_gc()
   // pour parcourir la pile
   mlvalue *curr = Caml_state->stack; // premier element de la pile
   next = Caml_state->to_space;       // premiere pos qu'on peut allouer dans to_space
-  // clear_heap(next);
-
-  // on parcours l'accu
-  move_addr(&accu);
-  move_addr(&env);
 
   while (curr < &(Caml_state->stack[sp])) // on parcours toute la pile
   {
-    move_addr(curr);
+    move_addr(curr, "stack");
     curr++; // on va sur l'élément suivant dans la pile
   }
 
-  mlvalue *scan = Caml_state->to_space + 1; // scan le tas, on ce place apres le premier header
-  // on parcours le tas jusqu'a la premier position non allouée (next)
+  // on parcours l'accu
+  move_addr(&accu, "accu");
+  // on parcours l'env
+  move_addr(&env, "env");
 
+  mlvalue *scan = Caml_state->to_space + 1; // scan le tas, on ce place apres le premier header
+
+  // on parcours le tas jusqu'a la premier position non allouée (next)
   while (scan < next)
   {
     for (int i = 0; i < Size(Val_ptr(scan)); i++) // on parcours l'objet
     {
-      move_addr(&scan[i]);
+      move_addr(&scan[i], "heap");
     }
     scan += Size(Val_ptr(scan)) + 1; // on passe a l'objet suivant et saute son header
   }
