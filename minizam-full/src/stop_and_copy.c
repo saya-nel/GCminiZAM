@@ -23,18 +23,19 @@ void move_addr(mlvalue *val, char *zone)
 {
   if (Is_block(*val)) // val pointe vers un block
   {
-    printf("%s : tag : %ld, size %ld\n", zone, Tag(*val), Size(*val));
+    if (zone == "stack")
+      printf("%s : tag : %ld, size %ld\n", zone, Tag(*val), Size(*val));
     if (Tag(*val) == FWD_PTR_T) // si le block est un fwd ptr
     {
       *val = Field0(*val); // on fais pointer val vers le fwd ptr
     }
     else
     {
-      // if (Tag(*val) > 3)
-      // printf("tag : %ld, size : %ld\n", Tag(*val), Size(*val));
       // on copie tout le bloc (header comprit) dans to_space
       mlvalue *old = next; // sauvegarde de l'endroit ou on va copier dans to_space
       memcpy(next, &(Hd_val(*val)), (Size(*val) + 1) * sizeof(mlvalue));
+      // if (zone == "stack")
+      //   printf("apres copie, tag from_space : %ld, size from_space : %ld, tag to_space %ld, size to_space %ld\n", Tag(*val), Size(*val), Tag(Val_ptr(old + 1)), Size(Val_ptr(old + 1)));
       next += Size(*val) + 1; // prochaine position disponible dans to_space
 
       // on change son tag en FWD_PTR_T
@@ -71,6 +72,7 @@ void run_gc()
   // on parcours le tas jusqu'a la premier position non allouée (next)
   while (scan < next)
   {
+    printf("heap tag : %ld, size : %ld\n", Tag(Val_ptr(scan)), Size(Val_ptr(scan)));
     for (int i = 0; i < Size(Val_ptr(scan)); i++) // on parcours l'objet
     {
       move_addr(&scan[i], "heap");
@@ -88,12 +90,12 @@ void run_gc()
 
 mlvalue *stop_and_copy_alloc(size_t n)
 {
-  n = n / sizeof(mlvalue);
-  if (heap_can_alloc(n))
+  int nb_mlvalue = n / sizeof(mlvalue);
+  if (heap_can_alloc(nb_mlvalue))
   {
     // printf("alloc ok\n");
     mlvalue *res = Caml_state->heap_pointer; // premier bloc vide
-    Caml_state->heap_pointer += n;           // on alloue n octet
+    Caml_state->heap_pointer += nb_mlvalue;  // on alloue n octet
     return res;
   }
   else
