@@ -4,21 +4,24 @@
 #include <stdint.h>
 #include <stdlib.h> // pour size_t
 
+//#include "mlvalue_list.h"
+
+
 typedef int64_t mlvalue;
 typedef uint64_t header_t;
 typedef enum
-{
-  WHITE,
-  GRAY,
-  BLACK
-} color_t;
+  {
+   WHITE,
+   GRAY,
+   BLACK
+  } color_t;
 typedef enum
-{
-  ENV_T,
-  CLOSURE_T,
-  BLOCK_T,
-  FWD_PTR_T
-} tag_t;
+  {
+   ENV_T,
+   CLOSURE_T,
+   BLOCK_T,
+   FWD_PTR_T
+  } tag_t;
 
 /* If a mlvalue ends with 1, it's an integer, otherwise it's a pointer. */
 #define Is_long(v) (((v)&1) != 0)
@@ -32,10 +35,10 @@ typedef enum
 #define Val_hd(hd) ((mlvalue)(hd))
 
 /* Structure of the header:
-     +--------+-------+-----+
-     | size   | color | tag |
-     +--------+-------+-----+
-bits  63    10 9     8 7   0
+   +--------+-------+-----+
+   | size   | color | tag |
+   +--------+-------+-----+
+   bits  63    10 9     8 7   0
 */
 #define Size_hd(hd) ((hd) >> 10)
 #define Color_hd(hd) (((hd) >> 8) & 3)
@@ -52,8 +55,8 @@ bits  63    10 9     8 7   0
 #define WHITE 0
 #define GRAY 1
 #define BLACK 2
-#define Make_header(size, color, tag) \
-  ((header_t)(((size) << 10) | (((color)&3) << 8) | ((tag)&0xFF)))
+#define Make_header(size, color, tag)					\
+    ((header_t)(((size) << 10) | (((color)&3) << 8) | ((tag)&0xFF)))
 
 #define Addr_closure(c) Long_val(Field0(c))
 #define Env_closure(c) Field1(c)
@@ -76,5 +79,6 @@ typedef uint64_t code_t;
 
 int print_instr(code_t *prog, int pc);
 void print_prog(code_t *code);
+
 
 #endif /* _MLVALUES_H */

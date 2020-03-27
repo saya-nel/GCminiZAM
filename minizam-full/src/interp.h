@@ -4,6 +4,8 @@
 #include "mlvalues.h"
 
 unsigned int sp;
+mlvalue accu;
+mlvalue env;
 
 mlvalue caml_interprete(code_t* prog);
 
