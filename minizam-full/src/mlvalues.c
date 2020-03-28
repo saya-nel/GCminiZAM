@@ -8,14 +8,17 @@
 #include "primitives.h"
 
 mlvalue make_empty_block(tag_t tag)
-{
+{ //printf("adieu!\n"); exit(1);
   mlvalue *block = caml_alloc(2 * sizeof(mlvalue));
-  block[0] = Make_header(0, WHITE, tag);
+  block[0] = Make_header(1, WHITE, tag);  // taille de 1, pas 0
+  block[1] = Val_long(42); // n'importe quoi qui ne soit pas un pointeur
   return Val_ptr(block + 1);
 }
 
-mlvalue make_block(size_t size, tag_t tag)
-{
+mlvalue make_block(size_t size, tag_t tag){ 
+  if (size == 0){
+    return make_empty_block(tag);
+  }
   mlvalue *block = caml_alloc((size + 1) * sizeof(mlvalue));
   block[0] = Make_header(size, WHITE, tag);
   return Val_ptr(block + 1);
