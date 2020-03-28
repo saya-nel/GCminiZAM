@@ -13,6 +13,8 @@
 
 #define Set_color(v,color) Hd_val(v) = Make_header(Size(v),color,Tag(v));
 
+
+
 // listes d'objets alloués
 struct cell {
   void * content;
@@ -23,28 +25,28 @@ typedef struct cell * list;
 #define Empty (0)
 #define Next(c) ((c)->next)
 /* list c */
-#define Free_cell(c) do {          \
-  free(c->content);                \
-  free(c);                         \
+#define Free_cell(c) do {			\
+    free(c->content);				\
+    free(c);					\
   } while (0);
 
-#define Cons(x,l) do {             \
-  list Cons = malloc(sizeof(list));\
-  Cons->content = (void *) x;      \
-  Cons->next = ((list) l);         \
-  l = Cons;                        \
+#define Cons(x,l) do {				\
+    list Cons = malloc(sizeof(list));		\
+    Cons->content = (void *) x;			\
+    Cons->next = ((list) l);			\
+    l = Cons;					\
   } while (0);                     
 
-#define Cdr(l) do {                \
-  list Cdr = l;                    \
-  l = (l)->next;                   \
-  Free_cell(Cdr);                  \
+#define Cdr(l) do {				\
+    list Cdr = l;				\
+    l = (l)->next;				\
+    Free_cell(Cdr);				\
   } while (0);
 
-#define RemoveCadr(l) do {         \
-  list RemoveCadr = (l)->next;     \
-  (l)->next = (l)->next->next;     \
-  Free_cell(RemoveCadr);           \
+#define RemoveCadr(l) do {			\
+    list RemoveCadr = (l)->next;		\
+    (l)->next = (l)->next->next;		\
+    Free_cell(RemoveCadr);			\
   } while (0);
 
 
@@ -53,6 +55,8 @@ int length (list l){
   while (l != Empty){ ++n; l = l->next; }
   return n;
 }
+
+/* ******************************* */
 
 //liste de gros objets alloués
 static list big_list = Empty;
@@ -94,8 +98,11 @@ static void big_sweep(){
 
 /* ****************************** */
 
-static list objects = Empty;
-static mlvalue fl_objects = NilFL;
+static list obj0 = Empty;
+static mlvalue fl0 = NilFL;
+
+static list obj1 = Empty;
+static mlvalue fl1 = NilFL;
 
 mlvalue * alloc(size_t sz,list * objects, mlvalue * fl){
   mlvalue b,*p = 0;
@@ -120,12 +127,11 @@ void fl_sweep(list * lst,mlvalue * fl){
         cur->next = cur->next->next; // retire b de la liste de gros objets alloués
         assert(cur);
       } else {
-         Set_color_hd(*b,WHITE);
+	Set_color_hd(*b,WHITE);
       }
     }
   }
 }
-
 
 /* ****************************************************** */
 
@@ -142,8 +148,6 @@ static void mark_aux(mlvalue racine){
   }
 }
 
-
-
 void mark(){ 
   size_t i;
   for (i = 0; i < sp; i++){ 
@@ -155,19 +159,22 @@ void mark(){
 
 void sweep (){
   Debug( printf ("[debut : %d big objets alloués\n",length(big_list)) );
-   Debug( printf ("[debut : %d objets alloués\n",length(objects)) );
+  Debug( printf ("[debut : %d objets alloués\n",length(obj0)) );
+  Debug( printf ("[debut : %d objets alloués\n",length(obj1)) );
   big_sweep();
-  fl_sweep(&objects,&fl_objects);
+  fl_sweep(&obj0,&fl0);
+  fl_sweep(&obj1,&fl1);
   Debug( printf ("fin : %d big objets alloués]\n",length(big_list)) );
-  Debug( printf ("fin : %d objets alloués]\n",length(objects)) );
+  Debug( printf ("fin : %d objets alloués]\n",length(obj0)) );
+  Debug( printf ("fin : %d objets alloués]\n",length(obj1)) );
 }
 
 mlvalue *mark_and_sweep_alloc(size_t sz){
   static size_t sz_last = 0; // 3 fois la quantité de mémoire utilisé lors du dernier gc
   static size_t cur_sz = 0;
   if (2 * cur_sz > sz_last * 3){  // si augmentation de 50 %
-  // effectivement la stratégie demdandée augmente 
-     //  les performances en pratique 
+    // effectivement la stratégie demdandée augmente 
+    //  les performances en pratique 
     sz_last = cur_sz;
     mark();
     sweep();
@@ -176,6 +183,8 @@ mlvalue *mark_and_sweep_alloc(size_t sz){
   if (sz >= BIG_OBJECT_MIN_SIZE){
     return big_alloc(sz);
   }
-  return alloc(sz,&objects,&fl_objects);
-  //return alloc(sz,&free_list); // return malloc (8*sz);
+  if  (sz >16){
+    return alloc(sz,&obj0,&fl0);
+  }
+  return alloc(sz,&obj1,&fl1);
 }
