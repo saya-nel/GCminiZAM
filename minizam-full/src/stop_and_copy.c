@@ -141,7 +141,7 @@ void move_addr(mlvalue *val, char *zone)
   }
 #ifdef DEBUG
   else
-    printf("parcours %s : not block\n", zone);
+    printf("parcours %s : not block : v %ld\n", zone, *val);
 #endif
 }
 
@@ -186,13 +186,13 @@ void run_gc()
   while (scan < next)
   {
 #ifdef DEBUG
-    printf("to_space tag : %ld, size : %ld\n", Tag(Val_ptr(scan)), Size(Val_ptr(scan)));
+    printf("to_space elem courant tag : %ld, size : %ld\n", Tag(Val_ptr(scan)), Size(Val_ptr(scan)));
 #endif
 
     for (int i = 0; i < Size(Val_ptr(scan)); i++) // on parcours l'objet
     {
 #ifdef DEBUG
-      printf("to_space infos : addr elem courant : %lu, addr dernier elem : %lu, addr fin to_space %lu\n", scan, next, Caml_state->to_space + (SEMI_SPACE_SIZE / sizeof(mlvalue)));
+      printf("to_space infos : addr field courant : %lu, addr dernier elem : %lu, addr fin to_space %lu\n", scan, next, Caml_state->to_space + (SEMI_SPACE_SIZE / sizeof(mlvalue)));
 #endif
 
       move_addr(&scan[i], "suivi pointeur depuis to_space");
