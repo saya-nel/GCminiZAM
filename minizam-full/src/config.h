@@ -16,8 +16,7 @@
 #define Stack_size (8 * MB)
 
 // config stop and copy
-#define SEMI_SPACE_SIZE (1 * KB)
-
+#define SEMI_SPACE_SIZE (64)
 
 #define BIG_OBJECT_MIN_SIZE (32 * KB)
 #define PAGE_SIZE (64 * KB)

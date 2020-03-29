@@ -226,21 +226,24 @@ mlvalue caml_interprete(code_t *prog)
       break;
     }
 
-    case CLOSURE: {
-       uint64_t addr = prog[pc++];
-       uint64_t n = prog[pc++];
-       if (n > 0) {
-         PUSH_STACK(accu);
-       }
-       accu = make_closure(addr,env);
-       mlvalue closure_env = Make_env(n+1);
-       Field(closure_env,0) = Val_long(addr);
-       for (uint64_t i = 0; i < n; i++) {
-         Field(closure_env,i+1) = POP_STACK();
-       }
-       Field1(accu) = closure_env;
-       break;
-     }
+    case CLOSURE:
+    {
+      uint64_t addr = prog[pc++];
+      uint64_t n = prog[pc++];
+      if (n > 0)
+      {
+        PUSH_STACK(accu);
+      }
+      accu = make_closure(addr, env);
+      mlvalue closure_env = Make_env(n + 1);
+      Field(closure_env, 0) = Val_long(addr);
+      for (uint64_t i = 0; i < n; i++)
+      {
+        Field(closure_env, i + 1) = POP_STACK();
+      }
+      Field1(accu) = closure_env;
+      break;
+    }
 
     case CLOSUREREC:
     {
@@ -250,7 +253,7 @@ mlvalue caml_interprete(code_t *prog)
       {
         PUSH_STACK(accu);
       }
-      accu = make_closure(addr,env);
+      accu = make_closure(addr, env);
       mlvalue closure_env = Make_env(n + 1);
       Field0(closure_env) = Val_long(addr);
       for (uint64_t i = 0; i < n; i++)
