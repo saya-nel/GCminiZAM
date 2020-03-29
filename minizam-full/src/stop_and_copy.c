@@ -1,8 +1,8 @@
 #include "stop_and_copy.h"
 
-#ifndef DEBUG
-#define DEBUG
-#endif
+//#ifndef DEBUG
+//#define DEBUG
+//#endif
 
 mlvalue *next;
 
@@ -229,7 +229,9 @@ mlvalue *stop_and_copy_alloc(size_t n)
 #endif
 
     run_gc();
-
+    if (!heap_can_alloc(nb_mlvalue)){
+      printf("plus de mémoire\n"); exit(1);
+    }
 #ifdef DEBUG
     printf("fin gc\n");
 #endif
