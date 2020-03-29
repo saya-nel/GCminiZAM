@@ -211,7 +211,8 @@ mlvalue caml_interprete(code_t *prog)
       }
       else
       {
-        accu = make_closure(pc - 3, env);
+        accu = make_closure(pc - 3,0);
+        Field1(accu) = env;
         mlvalue closure_env = Make_env(extra_args + 2);
         Field(closure_env, 0) = env;
         for (unsigned int i = 0; i <= extra_args; i++)
@@ -234,7 +235,8 @@ mlvalue caml_interprete(code_t *prog)
       {
         PUSH_STACK(accu);
       }
-      accu = make_closure(addr, env);
+      accu = make_closure(addr,0);
+        Field1(accu) = env;
       mlvalue closure_env = Make_env(n + 1);
       Field(closure_env, 0) = Val_long(addr);
       for (uint64_t i = 0; i < n; i++)
@@ -253,7 +255,8 @@ mlvalue caml_interprete(code_t *prog)
       {
         PUSH_STACK(accu);
       }
-      accu = make_closure(addr, env);
+      accu = make_closure(addr,0);
+      Field1(accu) = env;
       mlvalue closure_env = Make_env(n + 1);
       Field0(closure_env) = Val_long(addr);
       for (uint64_t i = 0; i < n; i++)
@@ -267,7 +270,9 @@ mlvalue caml_interprete(code_t *prog)
 
     case OFFSETCLOSURE:
     {
-      accu = make_closure(Long_val(Field(env, 0)), env);
+      accu = make_closure(0,0);
+      Field0(accu) = Val_long(Long_val(Field(env, 0)));
+      Field1(accu) = env;
       break;
     }
 

@@ -1,7 +1,7 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
-// #define MARK_AND_SWEEP
+//#define MARK_AND_SWEEP
 #define STOP_AND_COPY // GC à utiliser
 
 #define KB 1024
@@ -16,8 +16,9 @@
 #define Stack_size (8 * MB)
 
 // config stop and copy
-#define SEMI_SPACE_SIZE (64)
+#define SEMI_SPACE_SIZE (1 * KB)
 
-#define BIG_OBJECT_MIN_SIZE (32 * KB)
+
+#define BIG_OBJECT_MIN_SIZE 64 //(32 * KB)
 #define PAGE_SIZE (64 * KB)
 #endif

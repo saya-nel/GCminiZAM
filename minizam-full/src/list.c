@@ -5,3 +5,9 @@ int length (list l){
     while (l != Empty){ ++n; l = l->next; }
     return n;
 }
+
+void list_delete(list * l){
+    while (*l){
+        Cdr(*l);
+    }
+}

@@ -8,7 +8,7 @@
 #include "freelist.h"
 #include "list.h"
 
-#define Debug(x) //(x)
+#define Debug(x) (x)
 
 #define Set_color_hd(hd,color) hd = Make_header(Size_hd(hd),color,Tag_hd(hd));
 
@@ -53,6 +53,8 @@ mlvalue fl_find (mlvalue strategie (size_t sz,freelist_t * fl),
 
 /* ****************************** */
 
+list pages = Empty;
+
 mlvalue * palloc (size_t sz){
   static mlvalue * ptr = 0; // pointeur vers le dernier bloc alloué
   static size_t rest = 0;  // nombre de mlvalue restance jusqu'à la fin de la page
@@ -60,6 +62,7 @@ mlvalue * palloc (size_t sz){
   if (!ptr){
     CreatePage:
     b = malloc(PAGE_SIZE);
+    Cons(b,pages);
     rest = PAGE_SIZE / sizeof(mlvalue);
     rest -= sz;
     ptr = b + sz;
@@ -77,8 +80,15 @@ mlvalue * palloc (size_t sz){
   }
 }
 
-// #define Alloc malloc
-#define Alloc palloc
+void delete_pages(){
+  list_delete(&pages);
+  printf("pages correctement libérés.\n");
+}
+//atexit(delete_pages);
+
+
+/* allocateur de petits objets */
+#define Alloc palloc // ou malloc
 
 /* ****************************** */
 
