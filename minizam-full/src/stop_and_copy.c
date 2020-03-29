@@ -29,20 +29,21 @@ void resize_spaces()
   int half = (SEMI_SPACE_SIZE / sizeof(mlvalue)) / 2;               // nombre d'éléments a la moitié d'un semi space
   int quarter = half / 2;                                           // nombre d'élements au quart d'un semi space
   int nb_elems = Caml_state->heap_pointer - Caml_state->from_space; // nombre d'élement dans le from_space
-  int new_size = -1;                                                // nouvelle taille après redimension
   // définition de la nouvelle taille
+  printf("size : %ld\n", SEMI_SPACE_SIZE);
   if (Caml_state->from_space + half < Caml_state->heap_pointer) // si remplis à plus de 50%
-    new_size = SEMI_SPACE_SIZE * 1.5;
+    SEMI_SPACE_SIZE = SEMI_SPACE_SIZE * 1.5;
   else if (Caml_state->from_space + quarter > Caml_state->heap_pointer) // si remplis à moins de 25%
-    new_size = SEMI_SPACE_SIZE / 2;
-
+    SEMI_SPACE_SIZE = SEMI_SPACE_SIZE / 2;
+  printf("new size : %ld\n", SEMI_SPACE_SIZE);
   // création du nouveau from_space à la bonne taille
-  mlvalue *new_from_space = malloc(new_size);
+  mlvalue *new_from_space = malloc(SEMI_SPACE_SIZE);
   // copie de l'ancien from_space dans le nouveau
   memcpy(new_from_space, Caml_state->from_space, nb_elems * sizeof(mlvalue));
 
   // tout les pointeurs vers l'ancien from_space sont erronés, il faut les mettre à jour vers new_from_space
-  printf("addr from_space %ld, new_from_space %ld\n", Caml_state->from_space, new_from_space);
+  printf("nb eleme : %d\n", nb_elems);
+  printf("addr from_space %ld, new_from_space %ld, fin new : %ld\n", Caml_state->from_space, new_from_space, new_from_space + nb_elems);
 
   // on ajuste les pointeurs de la pile vers le nouveau from_space
   for (int i = 0; i < sp; i++) // on parcours les mlvalue dans la pile
@@ -74,10 +75,12 @@ void resize_spaces()
 
   // mlvalue *old = Caml_state->from_space;
   free(Caml_state->from_space);
+  printf("fromspace : %ld\n", Caml_state->from_space);
   Caml_state->from_space = new_from_space;
+  printf("fromspace : %ld\n", Caml_state->from_space);
   Caml_state->heap_pointer = Caml_state->from_space + nb_elems;
   free(Caml_state->to_space);
-  Caml_state->to_space = malloc(new_size);
+  Caml_state->to_space = malloc(SEMI_SPACE_SIZE);
 
   print_from_space();
 
