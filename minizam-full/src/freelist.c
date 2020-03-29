@@ -2,13 +2,13 @@
 #include <assert.h>
 #include <stdio.h>
 
-void cons_fl (mlvalue *bk, mlvalue * fl){
+void cons_fl (mlvalue *bk, freelist_t * fl){
   // attention à ne pas faire un cycle
   NextFL(bk) = *fl;
   *fl = *bk;
 }
 
-void print_fl (mlvalue fl){
+void print_fl (freelist_t fl){
   printf ("(");
   for ( ;fl != NilFL ; fl = NextFL(fl)){
     printf ("[0x%llx]{size = %lld} ;",fl,Size(fl));
@@ -16,7 +16,7 @@ void print_fl (mlvalue fl){
   printf (" Nil)\n");
 }
 
-mlvalue first_fit(size_t sz, mlvalue * fl){
+mlvalue first_fit(size_t sz, freelist_t * fl){
   /* rend le premier bloc de taille suffisante dans le free_list, ou Nil */
   mlvalue cur,p;
   if (*fl != NilFL){

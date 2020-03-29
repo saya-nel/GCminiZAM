@@ -6,6 +6,7 @@
 #include "config.h"
 #include "interp.h"
 #include "freelist.h"
+#include "list.h"
 
 #define Debug(x) //(x)
 
@@ -13,57 +14,111 @@
 
 #define Set_color(v,color) Hd_val(v) = Make_header(Size(v),color,Tag(v));
 
+/* ******************************* */
+// nombre de freelist
+#define NB_FREELIST 3
 
+// les freelist du programme
+static freelist_t freelist[NB_FREELIST] = {NilFL,NilFL,NilFL};
 
-// listes d'objets alloués
-struct cell {
-  void * content;
-  struct cell * next;    
-};
-typedef struct cell * list;
+// liste des "petits" objets alloués
+static list objects = Empty;
 
-#define Empty (0)
-#define Next(c) ((c)->next)
-/* list c */
-#define Free_cell(c) do {			\
-    free(c->content);				\
-    free(c);					\
-  } while (0);
-
-#define Cons(x,l) do {				\
-    list Cons = malloc(sizeof(list));		\
-    Cons->content = (void *) x;			\
-    Cons->next = ((list) l);			\
-    l = Cons;					\
-  } while (0);                     
-
-#define Cdr(l) do {				\
-    list Cdr = l;				\
-    l = (l)->next;				\
-    Free_cell(Cdr);				\
-  } while (0);
-
-#define RemoveCadr(l) do {			\
-    list RemoveCadr = (l)->next;		\
-    (l)->next = (l)->next->next;		\
-    Free_cell(RemoveCadr);			\
-  } while (0);
-
-
-int length (list l){
-  int n = 0;
-  while (l != Empty){ ++n; l = l->next; }
-  return n;
+// rend un pointeur sur la freelist cible d'un bloc de taille sz 
+freelist_t * select_freelist(size_t sz){ 
+  if (sz <= 64){
+    return &freelist[0];
+  }
+  if (sz <= 256){
+    return &freelist[1];
+  }
+  return &freelist[2];
 }
 
-/* ******************************* */
+// insertion d'un block dans la bonne freelist
+// le header du block, doit être block[0] et il doit être bien formé (on consulte la taille)
+void recycle (mlvalue * block){
+  size_t z = Size_hd(*block);
+  freelist_t * fl = select_freelist(z);
+  cons_fl(block,fl);
+}
+
+// recherche d'un emplacement assez grand dans une freelist, 
+// suivant une strategie (eg. first_fit)
+mlvalue fl_find (mlvalue strategie (size_t sz,freelist_t * fl), 
+                 size_t sz){
+  freelist_t * fl = select_freelist(sz);
+  return strategie(sz,fl);
+}
+
+/* ****************************** */
+
+mlvalue * palloc (size_t sz){
+  static mlvalue * ptr = 0; // pointeur vers le dernier bloc alloué
+  static size_t rest = 0;  // nombre de mlvalue restance jusqu'à la fin de la page
+  mlvalue * b;
+  if (!ptr){
+    CreatePage:
+    b = malloc(PAGE_SIZE);
+    rest = PAGE_SIZE / sizeof(mlvalue);
+    rest -= sz;
+    ptr = b + sz;
+    return b;
+  }
+  else if (sz <= rest){
+    b = ptr;
+    rest -= sz;
+    ptr = b + sz;
+    return b;
+  } else {
+    *ptr = Make_header(rest / sizeof(mlvalue),0,0);
+    recycle(ptr);
+    goto CreatePage;
+  }
+}
+
+// #define Alloc malloc
+#define Alloc palloc
+
+/* ****************************** */
+
+mlvalue * alloc(size_t sz,list * objects){
+  mlvalue b,*p = 0;
+  b = fl_find(first_fit,sz); 
+  if (b == NilFL){
+    p = Alloc(sz);
+    Cons(p,*objects);
+    return p;
+  }
+  return Ptr_val(b);
+}
+
+void fl_sweep(list * lst){
+  list cur = *lst;
+  mlvalue * b;
+  if (cur != Empty){
+    for ( ;cur->next != Empty ; cur = cur->next){
+      b = cur->next->content;
+      //printf("sz = %lld, color = %d, tag = %d\n",Size(Val_ptr(b+1)),Color(Val_ptr(b+1)),Tag(Val_ptr(b+1)));
+      if (Color_hd(*b) == WHITE){  
+        recycle(b); // ajoute b à la freelist 
+        cur->next = cur->next->next; // retire b de la liste de gros objets alloués
+        assert(cur);
+      } else {
+	Set_color_hd(*b,WHITE);
+      }
+    }
+  }
+}
+
+/* ****************************************************** */
 
 //liste de gros objets alloués
 static list big_list = Empty;
 
 // allouer un gros objet
 static mlvalue * big_alloc(size_t sz){
-  mlvalue *p = malloc(sz*8);
+  mlvalue *p = malloc(sz);
   Cons(p,big_list);
   return p;
 }
@@ -95,44 +150,6 @@ static void big_sweep(){
   }
 }
 
-
-/* ****************************** */
-
-static list obj0 = Empty;
-static mlvalue fl0 = NilFL;
-
-static list obj1 = Empty;
-static mlvalue fl1 = NilFL;
-
-mlvalue * alloc(size_t sz,list * objects, mlvalue * fl){
-  mlvalue b,*p = 0;
-  b = first_fit(sz,fl); 
-  if (b == NilFL){
-    p = malloc(8*sz);
-    Cons(p,*objects);
-    return p;
-  }
-  return Ptr_val(b);
-}
-
-void fl_sweep(list * lst,mlvalue * fl){
-  list cur = *lst;
-  mlvalue * b;
-  if (cur != Empty){
-    for ( ;cur->next != Empty ; cur = cur->next){
-      b = cur->next->content;
-      //printf("sz = %lld, color = %d, tag = %d\n",Size(Val_ptr(b+1)),Color(Val_ptr(b+1)),Tag(Val_ptr(b+1)));
-      if (Color_hd(*b) == WHITE){  
-        cons_fl(b,fl); // ajoute b à la freelist 
-        cur->next = cur->next->next; // retire b de la liste de gros objets alloués
-        assert(cur);
-      } else {
-	Set_color_hd(*b,WHITE);
-      }
-    }
-  }
-}
-
 /* ****************************************************** */
 
 static void mark_aux(mlvalue racine){
@@ -158,19 +175,18 @@ void mark(){
 }
 
 void sweep (){
-  Debug( printf ("[debut : %d big objets alloués\n",length(big_list)) );
-  Debug( printf ("[debut : %d objets alloués\n",length(obj0)) );
-  Debug( printf ("[debut : %d objets alloués\n",length(obj1)) );
+  Debug( printf ("[debut : %d gros objets alloués\n",length(big_list)) );
+  Debug( printf ("[debut : %d objets alloués\n",length(objects)) );
   big_sweep();
-  fl_sweep(&obj0,&fl0);
-  fl_sweep(&obj1,&fl1);
-  Debug( printf ("fin : %d big objets alloués]\n",length(big_list)) );
-  Debug( printf ("fin : %d objets alloués]\n",length(obj0)) );
-  Debug( printf ("fin : %d objets alloués]\n",length(obj1)) );
+  fl_sweep(&objects);
+  Debug( printf ("fin : %d gros objets alloués]\n",length(big_list)) );
+  Debug( printf ("fin : %d objets alloués]\n",length(objects)) );
 }
 
+/* ****************************************************** */
+
 mlvalue *mark_and_sweep_alloc(size_t sz){
-  static size_t sz_last = 0; // 3 fois la quantité de mémoire utilisé lors du dernier gc
+  static size_t sz_last = 0; // 3 fois la quantité de mémoire utilisée lors du dernier gc
   static size_t cur_sz = 0;
   if (2 * cur_sz > sz_last * 3){  // si augmentation de 50 %
     // effectivement la stratégie demdandée augmente 
@@ -183,8 +199,5 @@ mlvalue *mark_and_sweep_alloc(size_t sz){
   if (sz >= BIG_OBJECT_MIN_SIZE){
     return big_alloc(sz);
   }
-  if  (sz >16){
-    return alloc(sz,&obj0,&fl0);
-  }
-  return alloc(sz,&obj1,&fl1);
+  return alloc(sz,&objects);
 }
