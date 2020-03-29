@@ -223,6 +223,7 @@ mlvalue *stop_and_copy_alloc(size_t n)
   int nb_mlvalue = n / sizeof(mlvalue);
   if (!heap_can_alloc(nb_mlvalue))
   {
+    printf("debut gc\n");
 #ifdef DEBUG
     printf("Plus de place dans from_space, lancement GC.\n");
     printf("from_space : debut : %ld , fin : %ld / to_space : debut : %ld, fin : %ld\n", Caml_state->from_space, Caml_state->from_space + (SEMI_SPACE_SIZE / sizeof(mlvalue)), Caml_state->to_space, Caml_state->to_space + (SEMI_SPACE_SIZE / sizeof(mlvalue)));
