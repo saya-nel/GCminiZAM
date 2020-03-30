@@ -61,13 +61,37 @@ typedef enum
 #define Addr_closure(c) Long_val(Field0(c))
 #define Env_closure(c) Field1(c)
 
-mlvalue make_empty_block(tag_t tag);
-mlvalue make_block(size_t size, tag_t tag);
+#define Make_empty_env(reg) Make_empty_block(reg, ENV_T)
+#define Make_env(reg,size) Make_block(reg,size, ENV_T)
 
-#define Make_empty_env() make_empty_block(ENV_T)
-#define Make_env(size) make_block(size, ENV_T)
+// un nom de variable réservé pour les macros ci-dessous, 
+// ne doit pas être utiliser par le programmeur 
+#define CamlLocal PRIVATE_MLVALUE_IDENTIFIER
 
-mlvalue make_closure(uint64_t addr, mlvalue env);
+#define Make_empty_block(reg, tag) do {                         \
+  mlvalue * CamlLocal = caml_alloc(2 * sizeof(mlvalue));  \
+  CamlLocal[0] = Make_header(1, WHITE, tag);              \
+  CamlLocal[1] = Val_long(42);                            \
+  reg = Val_ptr(CamlLocal + 1);                           \
+} while (0);
+
+#define Make_block(reg, size, tag) do {                              \
+  if (size == 0){                                                    \
+    Make_empty_block(reg,tag);                                       \
+  } else {                                                           \
+    mlvalue * CamlLocal = caml_alloc((size + 1) * sizeof(mlvalue));  \
+    CamlLocal[0] = Make_header(size, WHITE, tag);                    \
+    reg = Val_ptr(CamlLocal + 1);                                        \
+  }                                                                  \
+} while (0);                                                         \
+
+#define Make_closure(reg,addr,env) do {                  \
+  mlvalue *CamlLocal = caml_alloc(3 * sizeof(mlvalue));  \
+  CamlLocal[0] = Make_header(2, WHITE, CLOSURE_T);       \
+  CamlLocal[1] = Val_long(addr);                         \
+  CamlLocal[2] = env;                                    \
+  reg = Val_ptr(CamlLocal + 1);                          \
+  } while (0);
 
 #define Unit Val_long(0)
 
