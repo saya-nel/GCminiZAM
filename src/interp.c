@@ -32,76 +32,71 @@ mlvalue caml_interprete(code_t *prog)
   unsigned int extra_args = 0;
   unsigned int trap_sp = 0;
 
-  while (1)
-  {
+  while (1){
 
-//#define DEBUG
+    //#define DEBUG
 #ifdef DEBUG
     printf("pc=%d  accu=%s  sp=%d extra_args=%d trap_sp=%d stack=[",
-           pc, val_to_str(accu), sp, extra_args, trap_sp);
-    if (sp > 0)
-    {
+	   pc, val_to_str(accu), sp, extra_args, trap_sp);
+    if (sp > 0){
       printf("%s", val_to_str(stack[sp - 1]));
     }
-    for (int i = sp - 2; i >= 0; i--)
-    {
+    for (int i = sp - 2; i >= 0; i--){
       printf(";%s", val_to_str(stack[i]));
     }
     printf("]  env=%s\n", val_to_str(env));
     print_instr(prog, pc);
 #endif
 
-    switch (prog[pc++])
-    {
+    switch (prog[pc++]){
     case CONST:
       accu = Val_long(prog[pc++]);
       break;
 
     case PRIM:
-      switch (prog[pc++])
-      {
+      switch (prog[pc++]){
       case ADD:
-        accu = ml_add(accu, POP_STACK());
-        break;
+	accu = ml_add(accu, POP_STACK());
+	break;
       case SUB:
-        accu = ml_sub(accu, POP_STACK());
-        break;
+	accu = ml_sub(accu, POP_STACK());
+	break;
       case DIV:
-        accu = ml_div(accu, POP_STACK());
-        break;
+	accu = ml_div(accu, POP_STACK());
+	break;
       case MUL:
-        accu = ml_mul(accu, POP_STACK());
-        break;
+	accu = ml_mul(accu, POP_STACK());
+	break;
       case OR:
-        accu = ml_or(accu, POP_STACK());
-        break;
+	accu = ml_or(accu, POP_STACK());
+	break;
       case AND:
-        accu = ml_and(accu, POP_STACK());
-        break;
+	accu = ml_and(accu, POP_STACK());
+	break;
       case NOT:
-        accu = ml_not(accu);
-        break;
+	accu = ml_not(accu);
+	break;
       case NE:
-        accu = ml_ne(accu, POP_STACK());
-        break;
+	accu = ml_ne(accu, POP_STACK());
+	break;
       case EQ:
-        accu = ml_eq(accu, POP_STACK());
-        break;
+	accu = ml_eq(accu, POP_STACK());
+	break;
       case LT:
-        accu = ml_lt(accu, POP_STACK());
-        break;
+	accu = ml_lt(accu, POP_STACK());
+	break;
       case LE:
-        accu = ml_le(accu, POP_STACK());
-        break;
+	accu = ml_le(accu, POP_STACK());
+	break;
       case GT:
-        accu = ml_gt(accu, POP_STACK());
-        break;
+	accu = ml_gt(accu, POP_STACK());
+	break;
       case GE:
-        accu = ml_ge(accu, POP_STACK());
-        break;
+	accu = ml_ge(accu, POP_STACK());
+	break;
       case PRINT:
-        accu = ml_print(accu);
-        break;
+	accu = ml_print(accu);
+	break;
       }
       break;
 
@@ -110,13 +105,11 @@ mlvalue caml_interprete(code_t *prog)
       break;
 
     case BRANCHIFNOT:
-      if (Long_val(accu) == 0)
-      {
-        pc = prog[pc];
+      if (Long_val(accu) == 0){
+	pc = prog[pc];
       }
-      else
-      {
-        pc++;
+      else {
+	pc++;
       }
       break;
 
@@ -137,30 +130,29 @@ mlvalue caml_interprete(code_t *prog)
       break;
 
     case APPLY:
-    {
-      uint64_t n = prog[pc++];
-      sp += 3;
-      for (uint64_t i = sp - n; i < sp; i++)
       {
-        stack[i] = stack[i - 3];
+	uint64_t n = prog[pc++];
+	sp += 3;
+	for (uint64_t i = sp - n; i < sp; i++)
+	  {
+	    stack[i] = stack[i - 3];
+	  }
+	stack[sp - n - 3] = env;
+	stack[sp - n - 2] = Val_long(pc);
+	stack[sp - n - 1] = Val_long(extra_args);
+	pc = Addr_closure(accu);
+	env = Env_closure(accu);
+	extra_args = n - 1;
+	break;
       }
-      stack[sp - n - 3] = env;
-      stack[sp - n - 2] = Val_long(pc);
-      stack[sp - n - 1] = Val_long(extra_args);
-      pc = Addr_closure(accu);
-      env = Env_closure(accu);
-      extra_args = n - 1;
-      break;
-    }
 
-    case APPTERM:
-    {
+    case APPTERM: {
       uint64_t n = prog[pc++];
       uint64_t m = prog[pc++];
       for (uint64_t i = 0; i < n; i++)
-      {
-        stack[sp - m + i] = stack[sp - n + i];
-      }
+	{
+	  stack[sp - m + i] = stack[sp - n + i];
+	}
       sp -= (m - n);
       pc = Addr_closure(accu);
       env = Env_closure(accu);
@@ -168,158 +160,134 @@ mlvalue caml_interprete(code_t *prog)
       break;
     }
 
-    case RETURN:
-    {
+    case RETURN: {
       uint64_t n = prog[pc++];
-      for (uint64_t i = 0; i < n; i++)
-      {
-        POP_STACK();
+      for (uint64_t i = 0; i < n; i++){
+	POP_STACK();
       }
-      if (extra_args == 0)
-      {
-        extra_args = Long_val(POP_STACK());
-        pc = Long_val(POP_STACK());
-        env = POP_STACK();
+      if (extra_args == 0){
+	extra_args = Long_val(POP_STACK());
+	pc = Long_val(POP_STACK());
+	env = POP_STACK();
       }
-      else
-      {
-        extra_args--;
-        pc = Addr_closure(accu);
-        env = Env_closure(accu);
+      else{
+	extra_args--;
+	pc = Addr_closure(accu);
+	env = Env_closure(accu);
       }
       break;
     }
 
-    case RESTART:
-    {
+    case RESTART: {
       unsigned int n = Size(env);
-      for (unsigned int i = n - 1; i > 0; i--)
-      {
-        PUSH_STACK(Field(env, i));
+      for (unsigned int i = n - 1; i > 0; i--){
+	PUSH_STACK(Field(env, i));
       }
       env = Field(env, 0);
       extra_args += n - 1;
       break;
     }
 
-    case GRAB:
-    {
+    case GRAB: {
       uint64_t n = prog[pc++];
-      if (extra_args >= n)
-      {
-        extra_args -= n;
+      if (extra_args >= n){
+	extra_args -= n;
       }
-      else
-      {
-        Make_closure(accu, pc - 3, env);
-        mlvalue closure_env;
-        Make_env(closure_env, extra_args + 2);
-        Field(closure_env, 0) = env;
-        for (unsigned int i = 0; i <= extra_args; i++)
-        {
-          Field(closure_env, i + 1) = POP_STACK();
-        }
-        Field1(accu) = closure_env;
-        extra_args = Long_val(POP_STACK());
-        pc = Long_val(POP_STACK());
-        env = POP_STACK();
+      else{
+	Make_closure(accu, pc - 3, env);
+	mlvalue closure_env;
+	Make_env(closure_env, extra_args + 2);
+	Field(closure_env, 0) = env;
+	for (unsigned int i = 0; i <= extra_args; i++){
+	  Field(closure_env, i + 1) = POP_STACK();
+	}
+	Field1(accu) = closure_env;
+	extra_args = Long_val(POP_STACK());
+	pc = Long_val(POP_STACK());
+	env = POP_STACK();
       }
       break;
     }
 
     case CLOSURE:
-    {
-      uint64_t addr = prog[pc++];
-      uint64_t n = prog[pc++];
-      if (n > 0)
       {
-        PUSH_STACK(accu);
+	uint64_t addr = prog[pc++];
+	uint64_t n = prog[pc++];
+	if (n > 0){
+	  PUSH_STACK(accu);
+	}
+	Make_closure(accu, addr, env);
+	mlvalue closure_env;
+	Make_env(closure_env, n + 1);
+	Field(closure_env, 0) = Val_long(addr);
+	for (uint64_t i = 0; i < n; i++){
+	  Field(closure_env, i + 1) = POP_STACK();
+	}
+	Field1(accu) = closure_env;
+	break;
       }
-      Make_closure(accu, addr, env);
-      mlvalue closure_env;
-      Make_env(closure_env, n + 1);
-      Field(closure_env, 0) = Val_long(addr);
-      for (uint64_t i = 0; i < n; i++)
-      {
-        Field(closure_env, i + 1) = POP_STACK();
-      }
-      Field1(accu) = closure_env;
-      break;
-    }
 
-    case CLOSUREREC:
-    {
+    case CLOSUREREC:{
       uint64_t addr = prog[pc++];
       uint64_t n = prog[pc++];
-      if (n > 0)
-      {
-        PUSH_STACK(accu);
+      if (n > 0){
+	PUSH_STACK(accu);
       }
       Make_closure(accu, addr, env);
       mlvalue closure_env;
       Make_env(closure_env, n + 1);
       Field0(closure_env) = Val_long(addr);
-      for (uint64_t i = 0; i < n; i++)
-      {
-        Field(closure_env, i + 1) = POP_STACK();
+      for (uint64_t i = 0; i < n; i++){
+	Field(closure_env, i + 1) = POP_STACK();
       }
       Field1(accu) = closure_env;
       PUSH_STACK(accu);
       break;
     }
 
-    case OFFSETCLOSURE:
-    {
+    case OFFSETCLOSURE:{
       Make_closure(accu, Long_val(Field(env, 0)), env);
       break;
     }
 
-    case MAKEBLOCK:
-    {
+    case MAKEBLOCK:{
       uint64_t n = prog[pc++];
       mlvalue blk;
       Make_block(blk, n, BLOCK_T);
-      if (n > 0)
-      {
-        Field(blk, 0) = accu;
-        for (unsigned int i = 1; i < n; i++)
-        {
-          Field(blk, i) = POP_STACK();
-        }
+      if (n > 0){
+	Field(blk, 0) = accu;
+	for (unsigned int i = 1; i < n; i++) {
+	  Field(blk, i) = POP_STACK();
+	}
       }
       accu = blk;
       break;
     }
 
-    case GETFIELD:
-    {
+    case GETFIELD: {
       uint64_t n = prog[pc++];
       accu = Field(accu, n);
       break;
     }
 
-    case VECTLENGTH:
-    {
+    case VECTLENGTH: {
       accu = Val_long(Size(accu));
       break;
     }
 
-    case GETVECTITEM:
-    {
+    case GETVECTITEM: {
       uint64_t n = Long_val(POP_STACK());
       accu = Field(accu, n);
       break;
     }
 
-    case SETFIELD:
-    {
+    case SETFIELD: {
       uint64_t n = prog[pc++];
       Field(accu, n) = POP_STACK();
       break;
     }
 
-    case SETVECTITEM:
-    {
+    case SETVECTITEM: {
       uint64_t n = Long_val(POP_STACK());
       mlvalue v = POP_STACK();
       Field(accu, n) = v;
@@ -327,16 +295,14 @@ mlvalue caml_interprete(code_t *prog)
       break;
     }
 
-    case ASSIGN:
-    {
+    case ASSIGN: {
       uint64_t n = prog[pc++];
       stack[sp - n - 1] = accu;
       accu = Unit;
       break;
     }
 
-    case PUSHTRAP:
-    {
+    case PUSHTRAP: {
       uint64_t addr = prog[pc++];
       PUSH_STACK(Val_long(extra_args));
       PUSH_STACK(env);
@@ -346,8 +312,7 @@ mlvalue caml_interprete(code_t *prog)
       break;
     }
 
-    case POPTRAP:
-    {
+    case POPTRAP: {
       POP_STACK(); // popping pc
       trap_sp = Long_val(POP_STACK());
       POP_STACK(); // popping env
@@ -355,21 +320,18 @@ mlvalue caml_interprete(code_t *prog)
       break;
     }
 
-    case RAISE:
-    {
-      if (trap_sp == 0)
-      {
-        fprintf(stderr, "Uncaught exception: %s\n", val_to_str(accu));
-        exit(EXIT_FAILURE);
+    case RAISE: {
+      if (trap_sp == 0) {
+	fprintf(stderr, "Uncaught exception: %s\n", val_to_str(accu));
+	exit(EXIT_FAILURE);
       }
-      else
-      {
-        sp = trap_sp;
-        pc = Long_val(POP_STACK());
-        trap_sp = Long_val(POP_STACK());
-        env = POP_STACK();
-        extra_args = Long_val(POP_STACK());
-        break;
+      else {
+	sp = trap_sp;
+	pc = Long_val(POP_STACK());
+	trap_sp = Long_val(POP_STACK());
+	env = POP_STACK();
+	extra_args = Long_val(POP_STACK());
+	break;
       }
     }
 

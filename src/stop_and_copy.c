@@ -1,5 +1,12 @@
 #include "stop_and_copy.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "domain_state.h"
+#include "config.h"
+#include "interp.h"
+
 mlvalue *next;
 
 /*

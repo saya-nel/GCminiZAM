@@ -1,8 +1,0 @@
-{
-  "files.associations": {
-    "stop_and_copy.h": "c",
-    "stdio.h": "c",
-    "instruct.h": "c",
-    "alloc.h": "c"
-  }
-}

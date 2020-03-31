@@ -2,8 +2,9 @@
 #define _CONFIG_H
 
 // GC à utiliser
-#define STOP_AND_COPY
-//#define MARK_AND_SWEEP
+//#define STOP_AND_COPY
+#define MARK_AND_SWEEP
+
 
 #define KB 1024
 #define MB (1024 * KB)
@@ -19,10 +20,12 @@
 // config stop and copy
 long SEMI_SPACE_SIZE;
 
-#define ZONE_SIZE 16
-#define NB_FREELIST (BIG_OBJECT_MIN_SIZE / ZONE_SIZE)
+#define FREELIST_ARRAY_RANGE 64
+#define NB_FREELIST (BIG_OBJECT_MIN_SIZE / FREELIST_ARRAY_RANGE)
 
-#define BIG_OBJECT_MIN_SIZE (32 * KB)
+
+// seul l'allocation de gros objets est fonctionnel sur les jeux de test fournis
+#define BIG_OBJECT_MIN_SIZE  0 // (32 * KB)
 #define PAGE_SIZE (64 * KB)
 
 #endif /* _CONFIG_H */

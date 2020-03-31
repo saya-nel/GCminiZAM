@@ -64,25 +64,34 @@ mlvalue *first_fit(size_t sz, freelist_t * fl){
   return NilFL;
 }
 
-/*
-mlvalue *first_fit(size_t sz, freelist_t * fl){
-  mlvalue cur,p;
-  if (*fl){
-    cur = *fl;
-    if (Size(cur) >= sz){
-      p = *fl;
-      *fl = NextFL(cur);
-      return Ptr_val(p)-1;
-    }
-    while (NextFL(cur)){
-      if (Size(NextFL(cur)) >= sz){
-        p = cur;
-        NextFL(cur) = NextFL(NextFL(cur));
-        return Ptr_val(p)-1;
-      }
-      cur = NextFL(cur);
-    }
-  }
-  return NilFL;
+
+int compare_size(mlvalue v1, mlvalue v2){
+  return v1 <= v2;
+  return Size(v2) - Size(v1);
 }
-*/
+
+int compare_addr(mlvalue v1, mlvalue v2){
+  return v2 - v1;
+}
+
+void insert_freelist (int compare (mlvalue,mlvalue), mlvalue bk, mlvalue * fl){
+  mlvalue *cur,*p;
+  if (!*fl){
+    cons_fl(bk,fl); 
+    return;
+  }
+  if (compare (bk,*fl) <= 0){ 
+    cons_fl(bk,fl); 
+    return; 
+  }
+  cur = fl;
+  while (NextFL(cur)){
+    p = (mlvalue *) NextFL(cur);
+    if (compare (bk,p) <= 0){  
+      cons_fl(bk,cur);
+      return;
+    } 
+    cur = p;
+  }
+  cons_fl(bk,cur);
+}

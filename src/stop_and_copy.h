@@ -1,10 +1,8 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#ifndef _STOP_AND_COPY_H
+#define _STOP_AND_COPY_H
 
 #include "mlvalues.h"
-#include "domain_state.h"
-#include "config.h"
-#include "interp.h"
 
 mlvalue *stop_and_copy_alloc(size_t n);
+
+#endif /* _STOP_AND_COPY_H */

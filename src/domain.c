@@ -10,8 +10,7 @@
 
 caml_domain_state *Caml_state;
 
-void caml_init_domain()
-{
+void caml_init_domain(){
   Caml_state = malloc(sizeof(caml_domain_state));
   Caml_state->stack = malloc(Stack_size);
 
@@ -23,15 +22,14 @@ void caml_init_domain()
 #endif
 
 #ifdef MARK_AND_SWEEP
-   NewFreeListArray(Caml_state->freelist_array);
-   Caml_state->pages = Empty;
-   Caml_state->objects = Empty;
-   Caml_state->big_objects = Empty;
+  NewFreeListArray(Caml_state->freelist_array);
+  Caml_state->pages = Empty;
+  Caml_state->objects = Empty;
+  Caml_state->big_objects = Empty;
 #endif
 }
 
-void free_domain()
-{
+void free_domain(){
   free(Caml_state->stack);
 #ifdef STOP_AND_COPY
   free(Caml_state->from_space);

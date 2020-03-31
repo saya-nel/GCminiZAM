@@ -15,7 +15,7 @@
 
 mlvalue *caml_alloc(size_t size)
 {
-// on appel la fonction d'allocation du bon GC
+  // on appel la fonction d'allocation du bon GC
 #ifdef STOP_AND_COPY
   return stop_and_copy_alloc(size);
 #endif

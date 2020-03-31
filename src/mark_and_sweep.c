@@ -12,18 +12,14 @@
 
 #define Set_color(v,color) Hd_val(v) = Make_header(Size(v),color,Tag(v));
 
-/* ******************************* */
-
 
 // insertion d'un block dans la bonne freelist
-// le header du block, doit être block[0] et il doit être bien formé (on consulte la taille)
+// le header du block, doit être block[0] et il doit être bien formé (sa taille sera consultée)
 void recycle (mlvalue * block){
   mlvalue v = Val_ptr(block+1);
   size_t z = Size(v);
-  //for (int i = 0;i < z;i++) { Field(v,i) = 0; }
   freelist_t * fl = SelectFreelist(z);
   insert_fl(v,fl);
-  //print_fl(fl);
 }
 
 // recherche d'un emplacement assez grand dans une freelist, 
@@ -34,7 +30,8 @@ mlvalue *fl_find (mlvalue * strategie (size_t sz,freelist_t * fl),
   return strategie(sz-1,fl);
 }
 
-/* ****************************** */
+
+// allocation dans un espace paginé
 
 mlvalue * paged_alloc (size_t sz){
   static mlvalue * ptr = 0; // pointeur vers le dernier bloc alloué
@@ -55,7 +52,7 @@ mlvalue * paged_alloc (size_t sz){
     ptr = b + sz;
     return b;
   } else {
-    //*ptr = Make_header(rest / sizeof(mlvalue),0,0);
+    *ptr = Make_header(rest / sizeof(mlvalue),0,0);
     recycle(ptr);
     goto CreatePage;
   }
@@ -63,15 +60,10 @@ mlvalue * paged_alloc (size_t sz){
 
 void delete_pages(){
   list_delete(&Caml_state->pages);
-  printf("pages correctement libérés.\n");
 }
-
-//atexit(delete_pages);
 
 /* allocateur de petits objets */
 #define Paged_alloc paged_alloc
-
-/* ****************************** */
 
 mlvalue * small_alloc(size_t sz){
   mlvalue *b;
@@ -84,7 +76,66 @@ mlvalue * small_alloc(size_t sz){
   return b;
 }
 
-// pour gros objets
+/* allocation de gros objet */
+static mlvalue * big_alloc(size_t sz){
+  mlvalue *p = malloc(sz);
+  Cons(p,Caml_state->big_objects);
+  return p;
+}
+
+
+
+/* phase de marquage */
+
+static void mark_aux(mlvalue racine){
+  size_t i;
+  if (Is_block(racine)){ 
+    if (Color(racine) != BLACK){ // si pas vu
+      Set_color(racine,BLACK); // color[racine] <- vu
+      for (i = 0; i < Size(racine);i++){
+        mark_aux (Field(racine,i));
+      }
+    }
+  }
+}
+
+void mark(){ 
+  size_t i;
+  for (i = 0; i < sp; i++){
+    mark_aux(Caml_state->stack[i]); 
+  }
+  mark_aux(accu);
+  mark_aux(env);
+  mark_aux(Val_ptr(CamlLocal+1));
+}
+
+
+/* phase de sweep pour les gros objets */
+static void big_sweep(){
+  list cur;
+  mlvalue * b;
+  if (Caml_state->big_objects != Empty){
+    b = Caml_state->big_objects->content;
+    if (Color_hd(*b) == WHITE){ 
+      FreeCar(Caml_state->big_objects);
+      if (!Caml_state->big_objects){ return; }
+    } else { 
+      Set_color_hd(*b,WHITE); 
+    }
+    cur = Caml_state->big_objects;
+    while (cur->next != Empty){
+      b = cur->next->content;
+      if (Color_hd(*b) == WHITE){
+        FreeCadr(cur);
+      } else {
+        Set_color_hd(*b,WHITE);
+        cur = cur->next;
+      }
+    }
+  }
+}
+
+/* phase de sweep pour les petits objets */
 static void small_sweep(){
   list cur, c;
   mlvalue * b;
@@ -115,63 +166,6 @@ static void small_sweep(){
   }
 }
 
-/* ****************************************************** */
-
-// allouer un gros objet
-static mlvalue * big_alloc(size_t sz){
-  mlvalue *p = malloc(sz);
-  Cons(p,Caml_state->big_objects);
-  return p;
-}
-
-// pour gros objets
-static void big_sweep(){
-  list cur;
-  mlvalue * b;
-  if (Caml_state->big_objects != Empty){
-    b = Caml_state->big_objects->content;
-    if (Color_hd(*b) == WHITE){ 
-      FreeCar(Caml_state->big_objects);
-      if (!Caml_state->big_objects){ return; }
-    } else { 
-      Set_color_hd(*b,WHITE); 
-    }
-    cur = Caml_state->big_objects;
-    while (cur->next != Empty){
-      b = cur->next->content;
-      if (Color_hd(*b) == WHITE){
-        FreeCadr(cur);
-      } else {
-        Set_color_hd(*b,WHITE);
-        cur = cur->next;
-      }
-    }
-  }
-}
-
-/* ****************************************************** */
-
-static void mark_aux(mlvalue racine){
-  size_t i;
-  if (Is_block(racine)){ 
-    if (Color(racine) != BLACK){ // si pas vu
-      Set_color(racine,BLACK); // color[racine] <- vu
-      for (i = 0; i < Size(racine);i++){
-        mark_aux (Field(racine,i));
-      }
-    }
-  }
-}
-
-void mark(){ 
-  size_t i;
-  for (i = 0; i < sp; i++){
-    mark_aux(Caml_state->stack[i]); 
-  }
-  mark_aux(accu);
-  mark_aux(env);
-  mark_aux(Val_ptr(CamlLocal+1));
-}
 
 void sweep (){
   Debug( printf ("[debut : %d gros objets alloués\n",length(Caml_state->big_objects)) );
@@ -182,7 +176,8 @@ void sweep (){
   Debug( printf ("fin : %d objets alloués]\n",length(Caml_state->objects)) );
 }
 
-/* ****************************************************** */
+/* allocation avec appel du gc à chaque fois que l'occupation mémoire 
+   atteint 50 % du celle resultant du précédent GC */ 
 
 mlvalue *mark_and_sweep_alloc(size_t sz){
   static size_t sz_last = 0; // 3 fois la quantité de mémoire utilisée lors du dernier gc
