@@ -31,8 +31,6 @@ int main(int argc, char **argv)
 
   mlvalue res = eval_file(argv[1]);
 
-  free_domain();
-
   // TODO: use getopt rather than this not-so-elegant strcmp.
   if (argc >= 3 && strcmp(argv[2], "-res") == 0)
   {
@@ -40,4 +38,6 @@ int main(int argc, char **argv)
     printf("%s\n", res_str);
     free(res_str);
   }
+
+  free_domain();
 }
