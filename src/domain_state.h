@@ -21,5 +21,6 @@ extern caml_domain_state *Caml_state;
 
 /* Initialisation function for |Caml_state| */
 void caml_init_domain();
+void free_domain();
 
 #endif
