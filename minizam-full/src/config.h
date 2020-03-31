@@ -18,6 +18,6 @@
 // config stop and copy
 long SEMI_SPACE_SIZE;
 
-#define BIG_OBJECT_MIN_SIZE 64 //(32 * KB)
+#define BIG_OBJECT_MIN_SIZE 32 // (32 * KB)
 #define PAGE_SIZE (64 * KB)
 #endif
