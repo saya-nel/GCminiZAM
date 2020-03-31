@@ -211,9 +211,9 @@ mlvalue caml_interprete(code_t *prog)
       }
       else
       {
-        Make_closure(accu,pc - 3, env);
+        Make_closure(accu, pc - 3, env);
         mlvalue closure_env;
-        Make_env(closure_env,extra_args + 2);
+        Make_env(closure_env, extra_args + 2);
         Field(closure_env, 0) = env;
         for (unsigned int i = 0; i <= extra_args; i++)
         {
@@ -235,7 +235,7 @@ mlvalue caml_interprete(code_t *prog)
       {
         PUSH_STACK(accu);
       }
-      Make_closure(accu,addr, env);
+      Make_closure(accu, addr, env);
       mlvalue closure_env;
       Make_env(closure_env, n + 1);
       Field(closure_env, 0) = Val_long(addr);
@@ -255,9 +255,9 @@ mlvalue caml_interprete(code_t *prog)
       {
         PUSH_STACK(accu);
       }
-      Make_closure(accu,addr, env);
+      Make_closure(accu, addr, env);
       mlvalue closure_env;
-      Make_env(closure_env,n + 1);
+      Make_env(closure_env, n + 1);
       Field0(closure_env) = Val_long(addr);
       for (uint64_t i = 0; i < n; i++)
       {
@@ -270,15 +270,15 @@ mlvalue caml_interprete(code_t *prog)
 
     case OFFSETCLOSURE:
     {
-      Make_closure(accu,Long_val(Field(env, 0)), env);
+      Make_closure(accu, Long_val(Field(env, 0)), env);
       break;
     }
 
     case MAKEBLOCK:
     {
       uint64_t n = prog[pc++];
-      mlvalue blk; 
-      Make_block(blk,n, BLOCK_T);
+      mlvalue blk;
+      Make_block(blk, n, BLOCK_T);
       if (n > 0)
       {
         Field(blk, 0) = accu;
@@ -377,7 +377,7 @@ mlvalue caml_interprete(code_t *prog)
       return accu;
 
     default:
-      fprintf(stderr, "Unkown bytecode: %llu at offset %d\n", prog[pc - 1], pc - 1);
+      fprintf(stderr, "Unkown bytecode: %lu at offset %d\n", prog[pc - 1], pc - 1);
       exit(EXIT_FAILURE);
     }
   }
