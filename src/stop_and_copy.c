@@ -39,7 +39,7 @@ void resize_spaces()
   }
 
   // on ajuste les pointeurs de la pile vers le nouveau from_space
-  for (int i = 0; i < sp; i++) // on parcours les mlvalue dans la pile
+  for (int i = 0; i < (int)sp; i++) // on parcours les mlvalue dans la pile
   {
     if (Is_block(Caml_state->stack[i])) // le mlvalue est un pointeur vers un elem de l'ancien from_space
     {
@@ -51,7 +51,7 @@ void resize_spaces()
   // on ajuste les pointeurs new_from_space -> from_space à new_from_space -> new_from_space
   for (int i = 1; i < nb_elems;) // on parcours les objets en sautant le premier header
   {
-    for (int j = 0; j < Size(Val_ptr(new_from_space + i)); j++) // on parcours les fields de l'objet
+    for (int j = 0; j < (int)Size(Val_ptr(new_from_space + i)); j++) // on parcours les fields de l'objet
     {
       if (Is_block(new_from_space[i + j])) // si le field est un pointeur
       {
@@ -117,7 +117,7 @@ void run_gc()
   // on parcours le tas jusqu'a la premier position non allouée (next)
   while (scan < next)
   {
-    for (int i = 0; i < Size(Val_ptr(scan)); i++) // on parcours l'objet
+    for (int i = 0; i < (int)Size(Val_ptr(scan)); i++) // on parcours l'objet
     {
       move_addr(&scan[i]);
     }
