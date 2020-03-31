@@ -18,6 +18,15 @@ void list_delete(list * l){
   }
 }
 
+void list_delete_structure(list * l){
+  list c;
+  while (*l != Empty){ 
+    c = *l;
+    *l = (*l)->next;  
+    free(c);
+  }
+}
+
 void print_list(list l){
   printf("[");
   while (l != Empty){

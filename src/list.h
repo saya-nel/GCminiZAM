@@ -50,6 +50,10 @@ int length (list l);
 // et l'ensemble des pointeurs stockés dans l
 void list_delete(list * l);
 
+// libère chaque cellule de la liste l 
+// sans liberer les pointeurs stockés dans l
+void list_delete_structure(list * l);
+
 // affiche les adresses des pointeurs stockés dans la liste l
 void print_list(list l);
 #endif /* _LIST_H */

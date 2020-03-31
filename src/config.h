@@ -22,7 +22,7 @@ long SEMI_SPACE_SIZE;
 #define ZONE_SIZE 16
 #define NB_FREELIST (BIG_OBJECT_MIN_SIZE / ZONE_SIZE)
 
-#define BIG_OBJECT_MIN_SIZE 0 // (32 * KB)
+#define BIG_OBJECT_MIN_SIZE  (32 * KB)
 #define PAGE_SIZE (64 * KB)
 
 #endif /* _CONFIG_H */

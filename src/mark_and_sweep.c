@@ -15,14 +15,6 @@
 /* ******************************* */
 
 
-
-
-
-// liste des "petits" objets alloués
-static list objects = Empty;
-
-
-
 // insertion d'un block dans la bonne freelist
 // le header du block, doit être block[0] et il doit être bien formé (on consulte la taille)
 void recycle (mlvalue * block){
@@ -77,7 +69,7 @@ void delete_pages(){
 //atexit(delete_pages);
 
 /* allocateur de petits objets */
-#define Paged_alloc paged_alloc // ou malloc
+#define Paged_alloc paged_alloc
 
 /* ****************************** */
 
@@ -86,7 +78,7 @@ mlvalue * small_alloc(size_t sz){
   b = fl_find(first_fit,sz / sizeof(mlvalue));  // -1 ?
   if (b == NilFL){
     b = Paged_alloc(sz);
-    Cons(b,objects);
+    Cons(b,Caml_state->objects);
     return b;
   }
   return b;
@@ -96,18 +88,18 @@ mlvalue * small_alloc(size_t sz){
 static void small_sweep(){
   list cur, c;
   mlvalue * b;
-  if (objects != Empty){
-    b = objects->content;
+  if (Caml_state->objects != Empty){
+    b = Caml_state->objects->content;
     if (Color_hd(*b) == WHITE){ 
-      c = objects;
-      objects = objects->next;
+      c = Caml_state->objects;
+      Caml_state->objects = Caml_state->objects->next;
       recycle(b);
       free(c);
-      if (!objects){ return; }
+      if (!Caml_state->objects){ return; }
     } else { 
       Set_color_hd(*b,WHITE); 
     }
-    cur = objects;
+    cur = Caml_state->objects;
     while (cur->next != Empty){
       b = cur->next->content;
       if (Color_hd(*b) == WHITE){
@@ -125,13 +117,10 @@ static void small_sweep(){
 
 /* ****************************************************** */
 
-//liste de gros objets alloués
-static list big_list = Empty;
-
 // allouer un gros objet
 static mlvalue * big_alloc(size_t sz){
   mlvalue *p = malloc(sz);
-  Cons(p,big_list);
+  Cons(p,Caml_state->big_objects);
   return p;
 }
 
@@ -139,15 +128,15 @@ static mlvalue * big_alloc(size_t sz){
 static void big_sweep(){
   list cur;
   mlvalue * b;
-  if (big_list != Empty){
-    b = big_list->content;
+  if (Caml_state->big_objects != Empty){
+    b = Caml_state->big_objects->content;
     if (Color_hd(*b) == WHITE){ 
-      FreeCar(big_list);
-      if (!big_list){ return; }
+      FreeCar(Caml_state->big_objects);
+      if (!Caml_state->big_objects){ return; }
     } else { 
       Set_color_hd(*b,WHITE); 
     }
-    cur = big_list;
+    cur = Caml_state->big_objects;
     while (cur->next != Empty){
       b = cur->next->content;
       if (Color_hd(*b) == WHITE){
@@ -185,12 +174,12 @@ void mark(){
 }
 
 void sweep (){
-  Debug( printf ("[debut : %d gros objets alloués\n",length(big_list)) );
-  Debug( printf ("[debut : %d objets alloués\n",length(objects)) );
+  Debug( printf ("[debut : %d gros objets alloués\n",length(Caml_state->big_objects)) );
+  Debug( printf ("[debut : %d objets alloués\n",length(Caml_state->objects)) );
   big_sweep();
   small_sweep();
-  Debug( printf ("fin : %d gros objets alloués]\n",length(big_list)) );
-  Debug( printf ("fin : %d objets alloués]\n",length(objects)) );
+  Debug( printf ("fin : %d gros objets alloués]\n",length(Caml_state->big_objects)) );
+  Debug( printf ("fin : %d objets alloués]\n",length(Caml_state->objects)) );
 }
 
 /* ****************************************************** */

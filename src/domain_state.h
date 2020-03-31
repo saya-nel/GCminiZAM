@@ -18,6 +18,8 @@ typedef struct _caml_domain_state
   // les freelist du programme
   mlvalue *freelist_array;
   list pages;
+  list objects;     // liste des "petits" objets alloués
+  list big_objects; // liste des "gros" objets alloués
 } caml_domain_state;
 
 /* The global state */
