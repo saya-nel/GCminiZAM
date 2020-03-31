@@ -37,7 +37,7 @@ void insert_fl (mlvalue bk, freelist_t * fl){
 void print_fl (freelist_t fl){
   printf ("(");
   for ( ;fl != NilFL ; fl = NextFL(fl)){
-    printf ("[0x%llx]{size = %lld} ;",fl,Size(fl));
+    printf ("[0x%lx]{size = %ld} ;",fl,Size(fl));
   }
   printf (" Nil)\n");
 }

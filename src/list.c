@@ -39,7 +39,7 @@ void print_list(list l)
   printf("[");
   while (l != Empty)
   {
-    printf("%llx|", (uint64_t)l->content);
+    printf("%lx|", (uint64_t)l->content);
     l = l->next;
   }
   printf("]\n");
