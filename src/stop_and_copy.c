@@ -17,59 +17,64 @@ void resize_spaces()
   int quarter = half / 2;                                           // nombre d'élements au quart d'un semi space
   int nb_elems = Caml_state->heap_pointer - Caml_state->from_space; // nombre d'élement dans le from_space
   // définition de la nouvelle taille
+  long old_size = SEMI_SPACE_SIZE;
   if (Caml_state->from_space + half < Caml_state->heap_pointer) // si remplis à plus de 50%
     SEMI_SPACE_SIZE = SEMI_SPACE_SIZE * 1.5;
   else if (Caml_state->from_space + quarter > Caml_state->heap_pointer) // si remplis à moins de 25%
     SEMI_SPACE_SIZE = SEMI_SPACE_SIZE / 2;
-  // création du nouveau from_space à la bonne taille
-  mlvalue *new_from_space = malloc(SEMI_SPACE_SIZE);
-  // copie de l'ancien from_space dans le nouveau
-  memcpy(new_from_space, Caml_state->from_space, nb_elems * sizeof(mlvalue));
 
-  // on ajuste accu et env si c'est des pointeus
-  if (Is_block(accu))
+  if (old_size != SEMI_SPACE_SIZE)
   {
-    int index = &(Field0(accu)) - Caml_state->from_space;
-    accu = Val_ptr(new_from_space + index);
-  }
-  if (Is_block(env))
-  {
-    int index = &(Field0(env)) - Caml_state->from_space;
-    env = Val_ptr(new_from_space + index);
-  }
+    // création du nouveau from_space à la bonne taille
+    mlvalue *new_from_space = malloc(SEMI_SPACE_SIZE);
+    // copie de l'ancien from_space dans le nouveau
+    memcpy(new_from_space, Caml_state->from_space, nb_elems * sizeof(mlvalue));
 
-  // on ajuste les pointeurs de la pile vers le nouveau from_space
-  for (int i = 0; i < (int)sp; i++) // on parcours les mlvalue dans la pile
-  {
-    if (Is_block(Caml_state->stack[i])) // le mlvalue est un pointeur vers un elem de l'ancien from_space
+    // on ajuste accu et env si c'est des pointeus
+    if (Is_block(accu))
     {
-      int index = &(Field0(Caml_state->stack[i])) - Caml_state->from_space; // sa position dans from_space
-      Caml_state->stack[i] = Val_ptr(new_from_space + index);               // on fais pointer le mlvalue de la pile vers new_from_space
+      int index = &(Field0(accu)) - Caml_state->from_space;
+      accu = Val_ptr(new_from_space + index);
     }
-  }
-
-  // on ajuste les pointeurs new_from_space -> from_space à new_from_space -> new_from_space
-  for (int i = 1; i < nb_elems;) // on parcours les objets en sautant le premier header
-  {
-    for (int j = 0; j < (int)Size(Val_ptr(new_from_space + i)); j++) // on parcours les fields de l'objet
+    if (Is_block(env))
     {
-      if (Is_block(new_from_space[i + j])) // si le field est un pointeur
+      int index = &(Field0(env)) - Caml_state->from_space;
+      env = Val_ptr(new_from_space + index);
+    }
+
+    // on ajuste les pointeurs de la pile vers le nouveau from_space
+    for (int i = 0; i < (int)sp; i++) // on parcours les mlvalue dans la pile
+    {
+      if (Is_block(Caml_state->stack[i])) // le mlvalue est un pointeur vers un elem de l'ancien from_space
       {
-        // on regarde la position de l'element vers lequel il pointe dans l'ancien from_space
-        int index = &(Field0(Caml_state->from_space[i + j])) - Caml_state->from_space;
-        // on corrige le pointeur dans new_from_spae
-        new_from_space[i + j] = Val_ptr(new_from_space + index);
+        int index = &(Field0(Caml_state->stack[i])) - Caml_state->from_space; // sa position dans from_space
+        Caml_state->stack[i] = Val_ptr(new_from_space + index);               // on fais pointer le mlvalue de la pile vers new_from_space
       }
     }
-    i += Size(Val_ptr(new_from_space + i)) + 1; // on passe à l'objet suivant en sautant son header
-  }
 
-  // mlvalue *old = Caml_state->from_space;
-  free(Caml_state->from_space);
-  Caml_state->from_space = new_from_space;
-  Caml_state->heap_pointer = Caml_state->from_space + nb_elems;
-  free(Caml_state->to_space);
-  Caml_state->to_space = malloc(SEMI_SPACE_SIZE);
+    // on ajuste les pointeurs new_from_space -> from_space à new_from_space -> new_from_space
+    for (int i = 1; i < nb_elems;) // on parcours les objets en sautant le premier header
+    {
+      for (int j = 0; j < (int)Size(Val_ptr(new_from_space + i)); j++) // on parcours les fields de l'objet
+      {
+        if (Is_block(new_from_space[i + j])) // si le field est un pointeur
+        {
+          // on regarde la position de l'element vers lequel il pointe dans l'ancien from_space
+          int index = &(Field0(Caml_state->from_space[i + j])) - Caml_state->from_space;
+          // on corrige le pointeur dans new_from_spae
+          new_from_space[i + j] = Val_ptr(new_from_space + index);
+        }
+      }
+      i += Size(Val_ptr(new_from_space + i)) + 1; // on passe à l'objet suivant en sautant son header
+    }
+
+    // mlvalue *old = Caml_state->from_space;
+    free(Caml_state->from_space);
+    Caml_state->from_space = new_from_space;
+    Caml_state->heap_pointer = Caml_state->from_space + nb_elems;
+    free(Caml_state->to_space);
+    Caml_state->to_space = malloc(SEMI_SPACE_SIZE);
+  }
 }
 
 void move_addr(mlvalue *val)
