@@ -377,7 +377,7 @@ mlvalue caml_interprete(code_t *prog)
       return accu;
 
     default:
-      fprintf(stderr, "Unkown bytecode: %lu at offset %d\n", prog[pc - 1], pc - 1);
+      fprintf(stderr, "Unkown bytecode: %llu at offset %d\n", prog[pc - 1], pc - 1);
       exit(EXIT_FAILURE);
     }
   }

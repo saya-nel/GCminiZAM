@@ -2,6 +2,7 @@
 #define _DOMAIN_STATE_H
 
 #include "mlvalues.h"
+#include "list.h"
 
 typedef struct _caml_domain_state
 {
@@ -14,6 +15,9 @@ typedef struct _caml_domain_state
   mlvalue *heap_pointer; // premiere position allouable
   // éléments utilisés pour le mark_and_sweep
 
+  // les freelist du programme
+  mlvalue *freelist_array;
+  list pages;
 } caml_domain_state;
 
 /* The global state */

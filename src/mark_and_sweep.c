@@ -2,10 +2,8 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "domain_state.h"
-#include "config.h"
 #include "interp.h"
-#include "freelist.h"
+
 #include "list.h"
 
 #define Debug(x) //(x)
@@ -15,25 +13,15 @@
 #define Set_color(v,color) Hd_val(v) = Make_header(Size(v),color,Tag(v));
 
 /* ******************************* */
-// nombre de freelist
-#define NB_FREELIST 3
 
-// les freelist du programme
-static freelist_t freelist[NB_FREELIST] = {NilFL,NilFL,NilFL};
+
+
+
 
 // liste des "petits" objets alloués
 static list objects = Empty;
 
-// rend un pointeur sur la freelist cible d'un bloc de taille sz 
-freelist_t * select_freelist(size_t sz){ 
-  if (sz <= 64){
-    return &freelist[0];
-  }
-  if (sz <= 256){
-    return &freelist[1];
-  }
-  return &freelist[2];
-}
+
 
 // insertion d'un block dans la bonne freelist
 // le header du block, doit être block[0] et il doit être bien formé (on consulte la taille)
@@ -41,33 +29,29 @@ void recycle (mlvalue * block){
   mlvalue v = Val_ptr(block+1);
   size_t z = Size(v);
   //for (int i = 0;i < z;i++) { Field(v,i) = 0; }
-  freelist_t * fl = select_freelist(z);
-  cons_fl(v,&fl);
-  //insert_fl(v,fl);
-  
+  freelist_t * fl = SelectFreelist(z);
+  insert_fl(v,fl);
   //print_fl(fl);
 }
 
 // recherche d'un emplacement assez grand dans une freelist, 
 // suivant une strategie (eg. first_fit)
 mlvalue *fl_find (mlvalue * strategie (size_t sz,freelist_t * fl), 
-                 size_t sz){
-  freelist_t * fl = select_freelist(sz);
+                  size_t sz){
+  freelist_t * fl = SelectFreelist(sz);
   return strategie(sz-1,fl);
 }
 
 /* ****************************** */
 
-list pages = Empty;
-
-mlvalue * palloc (size_t sz){
+mlvalue * paged_alloc (size_t sz){
   static mlvalue * ptr = 0; // pointeur vers le dernier bloc alloué
   static size_t rest = 0;  // nombre de mlvalue restance jusqu'à la fin de la page
   mlvalue * b;
   if (!ptr){
     CreatePage:
     b = malloc(PAGE_SIZE);
-    Cons(b,pages);
+    Cons(b,Caml_state->pages);
     rest = PAGE_SIZE / sizeof(mlvalue);
     rest -= sz;
     ptr = b + sz;
@@ -86,26 +70,23 @@ mlvalue * palloc (size_t sz){
 }
 
 void delete_pages(){
-  list_delete(&pages);
+  list_delete(&Caml_state->pages);
   printf("pages correctement libérés.\n");
 }
+
 //atexit(delete_pages);
 
-
 /* allocateur de petits objets */
-#define Alloc palloc // ou malloc
+#define Paged_alloc paged_alloc // ou malloc
 
 /* ****************************** */
 
 mlvalue * small_alloc(size_t sz){
   mlvalue *b;
-  b = fl_find(first_fit,sz / sizeof(mlvalue));  // pourquoi +1, -1 ?
-  //if (b) printf ("~~~~> %d %d\n",sz / sizeof(mlvalue), Size_hd(*b));
+  b = fl_find(first_fit,sz / sizeof(mlvalue));  // -1 ?
   if (b == NilFL){
-    b = Alloc(sz);
+    b = Paged_alloc(sz);
     Cons(b,objects);
-    //print_list(objects);
-    //p[0] = Make_header(0,WHITE,0);
     return b;
   }
   return b;
@@ -161,8 +142,7 @@ static void big_sweep(){
   if (big_list != Empty){
     b = big_list->content;
     if (Color_hd(*b) == WHITE){ 
-      Cdr(big_list);
-      //big_list = big_list->next;
+      FreeCar(big_list);
       if (!big_list){ return; }
     } else { 
       Set_color_hd(*b,WHITE); 
@@ -171,7 +151,7 @@ static void big_sweep(){
     while (cur->next != Empty){
       b = cur->next->content;
       if (Color_hd(*b) == WHITE){
-        RemoveCadr(cur);
+        FreeCadr(cur);
       } else {
         Set_color_hd(*b,WHITE);
         cur = cur->next;

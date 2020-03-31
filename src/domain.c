@@ -5,6 +5,9 @@
 #include "mlvalues.h"
 #include "stdio.h"
 
+#include "mark_and_sweep.h" // pour NewFreeListArray
+#include "list.h"
+
 caml_domain_state *Caml_state;
 
 void caml_init_domain()
@@ -17,6 +20,11 @@ void caml_init_domain()
   Caml_state->from_space = malloc(SEMI_SPACE_SIZE);
   Caml_state->to_space = malloc(SEMI_SPACE_SIZE);
   Caml_state->heap_pointer = Caml_state->from_space;
+
+#endif
+#ifdef MARK_AND_SWEEP
+   NewFreeListArray(Caml_state->freelist_array);
+   Caml_state->pages = Empty;
 #endif
 }
 
@@ -26,7 +34,10 @@ void free_domain()
 #ifdef STOP_AND_COPY
   free(Caml_state->from_space);
   free(Caml_state->to_space);
-  free(Caml_state->heap_pointer);
+#endif
+#ifdef MARK_AND_SWEEP
+  free(Caml_state->freelist_array);
+  list_delete(&Caml_state->pages);
 #endif
   free(Caml_state);
 }

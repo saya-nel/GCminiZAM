@@ -1,8 +1,9 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
-//#define MARK_AND_SWEEP
+
 #define STOP_AND_COPY // GC à utiliser
+//#define MARK_AND_SWEEP
 
 #define KB 1024
 #define MB (1024 * KB)
@@ -18,6 +19,11 @@
 // config stop and copy
 long SEMI_SPACE_SIZE;
 
-#define BIG_OBJECT_MIN_SIZE 32 // (32 * KB)
+#define ZONE_SIZE 16
+#define NB_FREELIST (BIG_OBJECT_MIN_SIZE / ZONE_SIZE)
+
+#define BIG_OBJECT_MIN_SIZE 0 // (32 * KB)
 #define PAGE_SIZE (64 * KB)
-#endif
+
+#endif /* _CONFIG_H */
+

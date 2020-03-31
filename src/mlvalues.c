@@ -17,9 +17,9 @@ void print_val(mlvalue val)
 char *long_to_str(mlvalue val)
 {
   uint64_t n = Long_val(val);
-  int length = snprintf(NULL, 0, "%ld", n) + 1;
+  int length = snprintf(NULL, 0, "%lld", n) + 1;
   char *buffer = malloc(length * sizeof(*buffer));
-  snprintf(buffer, length, "%ld", n);
+  snprintf(buffer, length, "%lld", n);
   return buffer;
 }
 
@@ -73,9 +73,9 @@ DELIMITED_BLOCK_TO_STR(block, '[', ']')
   mlvalue env = Env_closure(closure);
   int64_t addr = Addr_closure(closure);
   char *env_str = env_to_str(env);
-  int length = snprintf(NULL, 0, "{ %lu, %s }", addr, env_str) + 1;
+  int length = snprintf(NULL, 0, "{ %llu, %s }", addr, env_str) + 1;
   char *buffer = malloc(length * sizeof(*buffer));
-  snprintf(buffer, length, "{ %lu, %s }", addr, env_str);
+  snprintf(buffer, length, "{ %llu, %s }", addr, env_str);
   free(env_str);
   return buffer;
 }
@@ -100,7 +100,7 @@ char *val_to_str(mlvalue val)
 	  return block_to_str(val);
 
 	default:
-	  fprintf(stderr, "Unknown value type: %lu\n", Tag(val));
+	  fprintf(stderr, "Unknown value type: %llu\n", Tag(val));
 	  exit(EXIT_FAILURE);
 	}
     }
@@ -112,7 +112,7 @@ int print_instr(code_t *prog, int pc)
   switch (prog[pc++])
     {
     case CONST:
-      printf("CONST %lu\n", prog[pc++]);
+      printf("CONST %llu\n", prog[pc++]);
       break;
 
     case PRIM:
@@ -165,11 +165,11 @@ int print_instr(code_t *prog, int pc)
       break;
 
     case BRANCH:
-      printf("BRANCH %lu\n", prog[pc++]);
+      printf("BRANCH %llu\n", prog[pc++]);
       break;
 
     case BRANCHIFNOT:
-      printf("BRANCHIFNOT %lu\n", prog[pc++]);
+      printf("BRANCHIFNOT %llu\n", prog[pc++]);
       break;
 
     case PUSH:
@@ -181,20 +181,20 @@ int print_instr(code_t *prog, int pc)
       break;
 
     case ACC:
-      printf("ACC %lu\n", prog[pc++]);
+      printf("ACC %llu\n", prog[pc++]);
       break;
 
     case ENVACC:
-      printf("ENVACC %lu\n", prog[pc++]);
+      printf("ENVACC %llu\n", prog[pc++]);
       break;
 
     case CLOSURE:
-      printf("CLOSURE %lu, %lu\n", prog[pc], prog[pc + 1]);
+      printf("CLOSURE %llu, %llu\n", prog[pc], prog[pc + 1]);
       pc += 2;
       break;
 
     case CLOSUREREC:
-      printf("CLOSUREREC %lu, %lu\n", prog[pc], prog[pc + 1]);
+      printf("CLOSUREREC %llu, %llu\n", prog[pc], prog[pc + 1]);
       pc += 2;
       break;
 
@@ -203,24 +203,24 @@ int print_instr(code_t *prog, int pc)
       break;
 
     case APPLY:
-      printf("APPLY %lu\n", prog[pc++]);
+      printf("APPLY %llu\n", prog[pc++]);
       break;
 
     case APPTERM:
-      printf("APPTERM %lu, %lu\n", prog[pc], prog[pc + 1]);
+      printf("APPTERM %llu, %llu\n", prog[pc], prog[pc + 1]);
       pc += 2;
       break;
 
     case RETURN:
-      printf("RETURN %lu\n", prog[pc++]);
+      printf("RETURN %llu\n", prog[pc++]);
       break;
 
     case MAKEBLOCK:
-      printf("MAKEBLOCK %lu\n", prog[pc++]);
+      printf("MAKEBLOCK %llu\n", prog[pc++]);
       break;
 
     case GETFIELD:
-      printf("GETFIELD %lu\n", prog[pc++]);
+      printf("GETFIELD %llu\n", prog[pc++]);
       break;
 
     case VECTLENGTH:
@@ -232,7 +232,7 @@ int print_instr(code_t *prog, int pc)
       break;
 
     case SETFIELD:
-      printf("SETFIELD %lu\n", prog[pc++]);
+      printf("SETFIELD %llu\n", prog[pc++]);
       break;
 
     case SETVECTITEM:
@@ -240,11 +240,11 @@ int print_instr(code_t *prog, int pc)
       break;
 
     case ASSIGN:
-      printf("ASSIGN %lu\n", prog[pc++]);
+      printf("ASSIGN %llu\n", prog[pc++]);
       break;
 
     case PUSHTRAP:
-      printf("PUSHTRAP %lu\n", prog[pc++]);
+      printf("PUSHTRAP %llu\n", prog[pc++]);
       break;
 
     case POPTRAP:

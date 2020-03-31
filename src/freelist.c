@@ -5,42 +5,33 @@
 
 #define Debug(x) //(x)
 
+// ne pas insérer deux fois la même valeur
+// car créé un cycle
 void cons_fl (mlvalue bk, freelist_t * fl){
-  // attention à ne pas faire un cycle
-   Debug (printf ("fa\n"));
-   Debug (printf ("fi %d\n",Size(bk)));
   NextFL(bk) = *fl;
   *fl = bk;
-  Debug (printf ("fu\n"));
 }
+
 void insert_fl (mlvalue bk, freelist_t * fl){
   mlvalue *cur,*p;
- //printf ("fi %d\n",Size(bk));
   if (!*fl){
     cons_fl(bk,fl); 
     return;
   }
-  Debug (printf ("foo\n"));
   if (Size(bk) <= Size(*fl)){ 
     cons_fl(bk,fl); 
     return; 
   }
-   Debug (printf ("bar\n"));
   cur = fl;
   while (NextFL(cur)){
     p = (mlvalue *) NextFL(cur);
-    Debug ( printf ("cho %d\n",Size(p)));
     if (Size(bk) <= Size(p)){
-      Debug (printf ("ki\n"));
       cons_fl(bk,cur);
       return;
     } 
-   Debug (printf ("kou\n"));
     cur = p;
   }
-  Debug (printf ("toto\n"));
   cons_fl(bk,cur);
-  Debug (printf ("titi\n"));
 }
 
 void print_fl (freelist_t fl){

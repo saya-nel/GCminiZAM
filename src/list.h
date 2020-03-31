@@ -13,35 +13,43 @@ typedef struct cell * list;
 
 #define Next(c) ((c)->next)
 
-/* void(list c) */
-#define Free_cell(c) do {            \
-free(c->content);                    \
-free(c);                             \
+// libère le pointeur l vers une cellule
+// ainsi que le pointeur (void *) contenu dans cette cellule
+#define Free_cell(l) do {            \
+free(l->content);                    \
+free(l);                             \
 } while (0);
 
-#define Cons(x,l) do {               \
+// ajout d'un pointeur p (de tout type) dans la liste l
+#define Cons(p,l) do {               \
 list Cons = malloc(sizeof(list));    \
-Cons->content = (void *) x;          \
+Cons->content = (void *) p;          \
 Cons->next = ((list) l);             \
 l = Cons;                            \
 } while (0);
 
-#define Cdr(l) do {                  \
-list Cdr = l;                        \
-l = (l)->next;                       \
-Free_cell(Cdr);                      \
+// supprime le premier élément de la liste l, 
+// et affecte à l son cdr.
+#define FreeCar(l) do {              \
+  list FreeCar = l;                  \
+  l = (l)->next;                     \
+  Free_cell(FreeCar);                \
 } while (0);
 
-#define RemoveCadr(l) do {            \
-list RemoveCadr = (l)->next;          \
-(l)->next = (l)->next->next;          \
-Free_cell(RemoveCadr);                \
+// suprime le deuxième élément d'une liste l
+#define FreeCadr(l) do {             \
+  list FreeCadr = (l)->next;         \
+  (l)->next = (l)->next->next;       \
+  Free_cell(FreeCadr);               \
 } while (0);
 
-
+// calcul la longeur de la liste l
 int length (list l);
 
+// libère chaque cellule de la liste l 
+// et l'ensemble des pointeurs stockés dans l
 void list_delete(list * l);
 
+// affiche les adresses des pointeurs stockés dans la liste l
 void print_list(list l);
 #endif /* _LIST_H */
