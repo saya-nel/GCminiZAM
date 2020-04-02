@@ -5,7 +5,6 @@ use warnings;
 # use autodie qw(system); #ligne qu'on a commenté
 use feature 'say';
 
-
 # Since tests are ran in alphabetical order; keeping this list sorted
 # should help debugging.
 #
@@ -21,7 +20,7 @@ my %tests = (
     'bench/list_3'                => '100000',
     'bench/list_4'                => '100000',
     'bench/list_5'                => '[1,[5,0]]',
-    'bench/list_5'                => '[1,[5,0]]',
+    'bench/list_6'                => '[1,[5,0]]',
 
     'block_values/array_access'   => '1',
     'block_values/array_set'      => '[0,1,2]',

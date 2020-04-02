@@ -61,33 +61,33 @@ typedef enum
 #define Make_empty_env(reg) Make_empty_block(reg, ENV_T)
 #define Make_env(reg,size) Make_block(reg,size, ENV_T)
 
-    mlvalue * CamlLocal;
+mlvalue * CamlLocal;
 
 // un nom de variable réservé pour les macros ci-dessous, 
 // ne doit pas être utiliser par le programmeur 
-#define Make_empty_block(reg, tag) do {			\
+#define Make_empty_block(reg, tag) do {			      \
     CamlLocal = caml_alloc(2 * sizeof(mlvalue));	\
     CamlLocal[0] = Make_header(1, WHITE, tag);		\
-    CamlLocal[1] = Val_long(42);			\
-    reg = Val_ptr(CamlLocal + 1);			\
+    CamlLocal[1] = Val_long(42);			            \
+    reg = Val_ptr(CamlLocal + 1);		              \
   } while (0);
 
-#define Make_block(reg, size, tag) do {				\
-    if (size == 0){						\
-      Make_empty_block(reg,tag);				\
-    } else {							\
+#define Make_block(reg, size, tag) do {				              \
+    if (size == 0){						                              \
+      Make_empty_block(reg,tag);				                    \
+    } else {							                                  \
       CamlLocal = caml_alloc((size + 1) * sizeof(mlvalue));	\
-      CamlLocal[0] = Make_header(size, WHITE, tag);		\
-      reg = Val_ptr(CamlLocal + 1);				\
-    }								\
-  } while (0);							\
+      CamlLocal[0] = Make_header(size, WHITE, tag);		      \
+      reg = Val_ptr(CamlLocal + 1);				                  \
+    }							                                        	\
+  } while (0);						                                	\
 
-#define Make_closure(reg,addr,env) do {			\
-    CamlLocal = caml_alloc(3 * sizeof(mlvalue));	\
+#define Make_closure(reg,addr,env) do {			          \
+    CamlLocal = caml_alloc(3 * sizeof(mlvalue));	    \
     CamlLocal[0] = Make_header(2, WHITE, CLOSURE_T);	\
-    CamlLocal[1] = Val_long(addr);			\
-    CamlLocal[2] = env;					\
-    reg = Val_ptr(CamlLocal + 1);			\
+    CamlLocal[1] = Val_long(addr);			              \
+    CamlLocal[2] = env;					                      \
+    reg = Val_ptr(CamlLocal + 1);			                \
   } while (0);
 
 #define Unit Val_long(0)

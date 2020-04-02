@@ -18,7 +18,7 @@
 
 unsigned int sp = 0;
 mlvalue accu = Val_long(0);
-mlvalue env;
+mlvalue env = Val_long(0);;
 
 mlvalue caml_interprete(code_t *prog)
 {

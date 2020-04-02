@@ -19,6 +19,8 @@ typedef mlvalue freelist_t;
 // ajout d'une mlvalue b à la freelist fl (passée par référence)
 void cons_fl (mlvalue bk,freelist_t * fl);
 
+void delete_freelist(freelist_t fl);
+
 void insert_fl (mlvalue bk, freelist_t * fl);
 
 // affiche la freelist fl

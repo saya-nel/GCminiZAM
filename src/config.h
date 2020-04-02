@@ -16,14 +16,19 @@
 /* TODO: auto-growing stack, or throw stack overflow when needed. */
 #define Stack_size (64 * MB)
 
-// config stop and copy
+/* Stop&Copy */
 long SEMI_SPACE_SIZE;
 
-#define FREELIST_ARRAY_RANGE 64
-#define NB_FREELIST (BIG_OBJECT_MIN_SIZE / FREELIST_ARRAY_RANGE)
 
-// seul l'allocation de gros objets est fonctionnel sur les jeux de test fournis
-#define BIG_OBJECT_MIN_SIZE 0 // (32 * KB)
+/* Mark&Sweep */ 
+#define MAX_HEAP_SIZE 128 * MB
+#define BIG_OBJECT_MIN_SIZE (32 * KB)
+
+#define FREELIST_ARRAY_RANGE 1024
+
+ // une freelist pour chaque taille de 1 à 7, puis pour chaque puissance de 2
+#define NB_FREELIST (int) 64
+
 #define PAGE_SIZE (64 * KB)
 
 #endif /* _CONFIG_H */

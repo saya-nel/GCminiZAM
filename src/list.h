@@ -22,11 +22,20 @@ typedef struct cell * list;
 
 // ajout d'un pointeur p (de tout type) dans la liste l
 #define Cons(p,l) do {				\
-    list Cons = malloc(sizeof(list));		\
+    list Cons = malloc(sizeof(struct cell));		\
     Cons->content = (void *) p;			\
     Cons->next = ((list) l);			\
     l = Cons;					\
   } while (0);
+
+#define NIL 0
+#define PAIR(l) (l)
+#define CAR(l) (l)->content
+#define CADR(l) (l)->next->content
+#define CDR(l) (l)->next
+#define CDDR(l) (l)->next->next
+
+#define RPLACD(l,v) ((l)->next = v)
 
 // supprime le premier élément de la liste l, 
 // et affecte à l son cdr.

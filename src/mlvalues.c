@@ -7,15 +7,15 @@
 #include "instruct.h"
 #include "primitives.h"
 
-void print_val(mlvalue val)
-{
+mlvalue * CamlLocal = 0;
+
+void print_val(mlvalue val){
   char *val_str = val_to_str(val);
   printf("%s", val_str);
   free(val_str);
 }
 
-char *long_to_str(mlvalue val)
-{
+char *long_to_str(mlvalue val){
   uint64_t n = Long_val(val);
   int length = snprintf(NULL, 0, "%ld", n) + 1;
   char *buffer = malloc(length * sizeof(*buffer));
@@ -23,8 +23,7 @@ char *long_to_str(mlvalue val)
   return buffer;
 }
 
-char *block_content_to_str(mlvalue block)
-{
+char *block_content_to_str(mlvalue block){
   if (Size(block) == 0)
     return strdup("");
   char **content = malloc(Size(block) * sizeof(*content));
@@ -68,8 +67,7 @@ DELIMITED_BLOCK_TO_STR(block, '[', ']')
 
   DELIMITED_BLOCK_TO_STR(env, '<', '>')
 
-  char *closure_to_str(mlvalue closure)
-{
+  char *closure_to_str(mlvalue closure){
   mlvalue env = Env_closure(closure);
   int64_t addr = Addr_closure(closure);
   char *env_str = env_to_str(env);
@@ -80,194 +78,185 @@ DELIMITED_BLOCK_TO_STR(block, '[', ']')
   return buffer;
 }
 
-char *val_to_str(mlvalue val)
-{
-  if (Is_long(val))
-    {
-      return long_to_str(val);
+char *val_to_str(mlvalue val){
+  if (Is_long(val)){
+    return long_to_str(val);
+  }
+  else{
+    switch (Tag(val)){
+    case ENV_T:
+      return env_to_str(val);
+
+    case CLOSURE_T:
+      return closure_to_str(val);
+
+    case BLOCK_T:
+      return block_to_str(val);
+
+    default:
+      fprintf(stderr, "Unknown value type: %lu\n", Tag(val));
+      exit(EXIT_FAILURE);
     }
-  else
-    {
-      switch (Tag(val))
-	{
-	case ENV_T:
-	  return env_to_str(val);
-
-	case CLOSURE_T:
-	  return closure_to_str(val);
-
-	case BLOCK_T:
-	  return block_to_str(val);
-
-	default:
-	  fprintf(stderr, "Unknown value type: %lu\n", Tag(val));
-	  exit(EXIT_FAILURE);
-	}
-    }
+  }
 }
 
 /* Returns the value of |pc| after moving to the next instruction */
-int print_instr(code_t *prog, int pc)
-{
-  switch (prog[pc++])
-    {
-    case CONST:
-      printf("CONST %lu\n", prog[pc++]);
-      break;
+int print_instr(code_t *prog, int pc){
+  switch (prog[pc++]){
+  case CONST:
+    printf("CONST %lu\n", prog[pc++]);
+    break;
 
-    case PRIM:
-      printf("PRIM ");
-      switch (prog[pc++])
-	{
-	case ADD:
-	  printf("+\n");
-	  break;
-	case SUB:
-	  printf("-\n");
-	  break;
-	case DIV:
-	  printf("/\n");
-	  break;
-	case MUL:
-	  printf("*\n");
-	  break;
-	case OR:
-	  printf("or\n");
-	  break;
-	case AND:
-	  printf("and\n");
-	  break;
-	case NOT:
-	  printf("not\n");
-	  break;
-	case NE:
-	  printf("ne\n");
-	  break;
-	case EQ:
-	  printf("eq\n");
-	  break;
-	case LT:
-	  printf("lt\n");
-	  break;
-	case LE:
-	  printf("le\n");
-	  break;
-	case GT:
-	  printf("gt\n");
-	  break;
-	case GE:
-	  printf("ge\n");
-	  break;
-	case PRINT:
-	  printf("print\n");
-	  break;
-	}
+  case PRIM:
+    printf("PRIM ");
+    switch (prog[pc++]){
+    case ADD:
+      printf("+\n");
       break;
-
-    case BRANCH:
-      printf("BRANCH %lu\n", prog[pc++]);
+    case SUB:
+      printf("-\n");
       break;
-
-    case BRANCHIFNOT:
-      printf("BRANCHIFNOT %lu\n", prog[pc++]);
+    case DIV:
+      printf("/\n");
       break;
-
-    case PUSH:
-      printf("PUSH\n");
+    case MUL:
+      printf("*\n");
       break;
-
-    case POP:
-      printf("POP\n");
+    case OR:
+      printf("or\n");
       break;
-
-    case ACC:
-      printf("ACC %lu\n", prog[pc++]);
+    case AND:
+      printf("and\n");
       break;
-
-    case ENVACC:
-      printf("ENVACC %lu\n", prog[pc++]);
+    case NOT:
+      printf("not\n");
       break;
-
-    case CLOSURE:
-      printf("CLOSURE %lu, %lu\n", prog[pc], prog[pc + 1]);
-      pc += 2;
+    case NE:
+      printf("ne\n");
       break;
-
-    case CLOSUREREC:
-      printf("CLOSUREREC %lu, %lu\n", prog[pc], prog[pc + 1]);
-      pc += 2;
+    case EQ:
+      printf("eq\n");
       break;
-
-    case OFFSETCLOSURE:
-      printf("OFFSETCLOSURE\n");
+    case LT:
+      printf("lt\n");
       break;
-
-    case APPLY:
-      printf("APPLY %lu\n", prog[pc++]);
+    case LE:
+      printf("le\n");
       break;
-
-    case APPTERM:
-      printf("APPTERM %lu, %lu\n", prog[pc], prog[pc + 1]);
-      pc += 2;
+    case GT:
+      printf("gt\n");
       break;
-
-    case RETURN:
-      printf("RETURN %lu\n", prog[pc++]);
+    case GE:
+      printf("ge\n");
       break;
-
-    case MAKEBLOCK:
-      printf("MAKEBLOCK %lu\n", prog[pc++]);
+    case PRINT:
+      printf("print\n");
       break;
-
-    case GETFIELD:
-      printf("GETFIELD %lu\n", prog[pc++]);
-      break;
-
-    case VECTLENGTH:
-      printf("VECTLENGTH\n");
-      break;
-
-    case GETVECTITEM:
-      printf("GETVECTITEM\n");
-      break;
-
-    case SETFIELD:
-      printf("SETFIELD %lu\n", prog[pc++]);
-      break;
-
-    case SETVECTITEM:
-      printf("SETVECTITEM\n");
-      break;
-
-    case ASSIGN:
-      printf("ASSIGN %lu\n", prog[pc++]);
-      break;
-
-    case PUSHTRAP:
-      printf("PUSHTRAP %lu\n", prog[pc++]);
-      break;
-
-    case POPTRAP:
-      printf("POPTRAP\n");
-      break;
-
-    case RAISE:
-      printf("RAISE\n");
-      break;
-
-    case STOP:
-      printf("STOP\n");
-      return -1;
     }
+    break;
+
+  case BRANCH:
+    printf("BRANCH %lu\n", prog[pc++]);
+    break;
+
+  case BRANCHIFNOT:
+    printf("BRANCHIFNOT %lu\n", prog[pc++]);
+    break;
+
+  case PUSH:
+    printf("PUSH\n");
+    break;
+
+  case POP:
+    printf("POP\n");
+    break;
+
+  case ACC:
+    printf("ACC %lu\n", prog[pc++]);
+    break;
+
+  case ENVACC:
+    printf("ENVACC %lu\n", prog[pc++]);
+    break;
+
+  case CLOSURE:
+    printf("CLOSURE %lu, %lu\n", prog[pc], prog[pc + 1]);
+    pc += 2;
+    break;
+
+  case CLOSUREREC:
+    printf("CLOSUREREC %lu, %lu\n", prog[pc], prog[pc + 1]);
+    pc += 2;
+    break;
+
+  case OFFSETCLOSURE:
+    printf("OFFSETCLOSURE\n");
+    break;
+
+  case APPLY:
+    printf("APPLY %lu\n", prog[pc++]);
+    break;
+
+  case APPTERM:
+    printf("APPTERM %lu, %lu\n", prog[pc], prog[pc + 1]);
+    pc += 2;
+    break;
+
+  case RETURN:
+    printf("RETURN %lu\n", prog[pc++]);
+    break;
+
+  case MAKEBLOCK:
+    printf("MAKEBLOCK %lu\n", prog[pc++]);
+    break;
+
+  case GETFIELD:
+    printf("GETFIELD %lu\n", prog[pc++]);
+    break;
+
+  case VECTLENGTH:
+    printf("VECTLENGTH\n");
+    break;
+
+  case GETVECTITEM:
+    printf("GETVECTITEM\n");
+    break;
+
+  case SETFIELD:
+    printf("SETFIELD %lu\n", prog[pc++]);
+    break;
+
+  case SETVECTITEM:
+    printf("SETVECTITEM\n");
+    break;
+
+  case ASSIGN:
+    printf("ASSIGN %lu\n", prog[pc++]);
+    break;
+
+  case PUSHTRAP:
+    printf("PUSHTRAP %lu\n", prog[pc++]);
+    break;
+
+  case POPTRAP:
+    printf("POPTRAP\n");
+    break;
+
+  case RAISE:
+    printf("RAISE\n");
+    break;
+
+  case STOP:
+    printf("STOP\n");
+    return -1;
+  }
 
   return pc;
 }
 
-void print_prog(code_t *prog)
-{
+void print_prog(code_t *prog){
   int i = 0;
-  while (i != -1)
-    {
-      i = print_instr(prog, i);
-    }
+  while (i != -1){
+    i = print_instr(prog, i);
+  }
 }
